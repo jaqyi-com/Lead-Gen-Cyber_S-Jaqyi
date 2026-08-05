@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "buildCommand": "cd dashboard && npm install && npm run build",
+  "outputDirectory": "dashboard/.next",
+  "installCommand": "cd dashboard && npm install",
+  "framework": "nextjs",
+  "env": {
+    "GOOGLE_SHEET_ID": "@google_sheet_id",
+    "GOOGLE_SHEET_TAB_NAME": "@google_sheet_tab_name",
+    "GOOGLE_SHEETS_CREDENTIALS_JSON": "@google_sheets_credentials_json"
+  }
+}
