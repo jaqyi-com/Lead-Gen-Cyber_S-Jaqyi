@@ -1,0 +1,26 @@
+{
+  "name": "jaqyi-lead-pipeline",
+  "version": "1.0.0",
+  "description": "Automated lead generation pipeline for JAQYI — scrape, classify, enrich, store, digest.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "schedule": "ts-node src/scheduler.ts",
+    "dev": "ts-node --watch src/index.ts"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "googleapis": "^144.0.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}

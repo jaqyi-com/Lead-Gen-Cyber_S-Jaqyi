@@ -1,0 +1,19 @@
+node_modules/
+dist/
+
+# Secrets — NEVER commit these
+.env
+*.credentials.json
+google-credentials.json
+gmail-credentials.json
+
+# Dedupe cache (contains processed URLs — optional to commit)
+seen-hashes.json
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
