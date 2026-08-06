@@ -1,11 +1,14 @@
 import axios from 'axios';
-import { SOCIAL_KEYWORDS } from '../config/keywords';
 
 const APIFY_TOKEN = process.env.APIFY_TOKEN!;
 
 /**
  * Helper: Start an Apify actor run, poll until SUCCEEDED, return dataset items.
  * Avoids the 120-second timeout of run-sync-get-dataset-items for slow actors.
+ *
+ * For apify/google-search-scraper: each dataset item = one query page, with
+ * organicResults[] containing the actual 10 search results. This function
+ * automatically flattens those into individual result items.
  */
 export async function runApifyActor(
   actorId: string,
@@ -48,6 +51,22 @@ export async function runApifyActor(
     { timeout: 30_000 }
   );
 
-  const items = Array.isArray(itemsRes.data) ? itemsRes.data : [];
-  return items as Record<string, unknown>[];
+  const rawItems = Array.isArray(itemsRes.data) ? itemsRes.data : [];
+
+  // 4. Flatten Google Search Scraper results:
+  //    Each item has organicResults[] — expand them into individual result objects.
+  if (rawItems.length > 0 && Array.isArray(rawItems[0]?.organicResults)) {
+    const flattened: Record<string, unknown>[] = [];
+    for (const pageItem of rawItems) {
+      const organic = (pageItem as Record<string, unknown>).organicResults as Record<string, unknown>[];
+      for (const result of organic) {
+        // Promote organic result fields to top-level
+        flattened.push(result as Record<string, unknown>);
+      }
+    }
+    console.log(`  [apify] Flattened ${rawItems.length} search pages → ${flattened.length} organic results`);
+    return flattened;
+  }
+
+  return rawItems as Record<string, unknown>[];
 }

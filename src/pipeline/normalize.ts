@@ -48,21 +48,29 @@ function normalizeGoogleSearchResult(
   source: SourceName,
   domainCheck: (url: string) => boolean
 ): RawLead | null {
+  // apify/google-search-scraper organicResult fields:
+  //   url, title, description, websiteTitle, displayedUrl, emphasizedKeywords
   const url = str(raw.url ?? raw.link ?? '');
   if (!url || !domainCheck(url)) return null;
 
-  // Try to extract budget from snippet (e.g. "$500", "$50/hr")
-  const snippet = str(raw.description ?? raw.snippet ?? raw.text ?? '');
-  const budgetMatch = snippet.match(/\$[\d,]+(?:\/hr|\/hour|k|K)?/);
+  const title = str(raw.title ?? raw.heading ?? '');
+  const description = str(raw.description ?? raw.snippet ?? raw.text ?? '');
+
+  // Skip items with no meaningful content
+  if (!title && !description) return null;
+
+  // Try to extract budget from title or snippet (e.g. "$500", "$50/hr", "$5k")
+  const combined = `${title} ${description}`;
+  const budgetMatch = combined.match(/\$[\d,]+(?:\/hr|\/hour|k|K)?/);
 
   return {
     source,
-    title: str(raw.title ?? raw.heading ?? 'Untitled'),
-    description: snippet,
+    title: title || description.slice(0, 80) || 'Untitled',
+    description,
     url,
     budget: budgetMatch ? budgetMatch[0] : strOpt(raw.budget),
     postedAt: str(raw.date ?? raw.publishedDate ?? new Date().toISOString()),
-    authorName: strOpt(raw.name ?? raw.author ?? raw.displayLink),
+    authorName: strOpt(raw.websiteTitle ?? raw.name ?? raw.author ?? raw.displayLink),
     authorHandle: undefined,
   };
 }
