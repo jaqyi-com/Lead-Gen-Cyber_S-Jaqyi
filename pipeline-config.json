@@ -1,0 +1,29 @@
+{
+  "keywords": [
+    "HTML", "CSS", "JavaScript", "React", "Next.js", "Express", "Node.js",
+    "TypeScript", "Tailwind CSS", "Redux", "Context API",
+    "PostgreSQL", "MongoDB", "Redis", "Firestore", "Supabase",
+    "GraphQL", "REST API", "JWT", "Auth0", "Socket.io", "Webhooks",
+    "Claude", "GPT", "LangChain", "OpenAI API", "Anthropic API", "Vector DB",
+    "n8n", "API Integrations", "Zapier",
+    "GCP", "Vercel", "Cloud Run", "AWS",
+    "SaaS", "CRM Platforms", "Data SaaS", "AI Agents", "Automation Systems",
+    "mobile app", "web app", "full stack", "machine learning", "chatbot"
+  ],
+  "categories": {
+    "Web Development": ["HTML", "CSS", "JavaScript", "React", "Next.js", "Express", "Node.js", "TypeScript", "Tailwind CSS", "Redux", "Context API"],
+    "Database": ["PostgreSQL", "MongoDB", "Redis", "Firestore", "Supabase"],
+    "Backend/API": ["GraphQL", "REST API", "JWT", "Auth0", "Socket.io", "Webhooks"],
+    "AI/LLM": ["Claude", "GPT", "LangChain", "OpenAI API", "Anthropic API", "Vector DB"],
+    "Automation": ["n8n", "API Integrations", "Zapier"],
+    "Cloud/Deployment": ["GCP", "Vercel", "Cloud Run", "AWS"],
+    "Software Types": ["SaaS", "CRM Platforms", "Data SaaS", "AI Agents", "Automation Systems", "mobile app", "web app"]
+  },
+  "schedule": {
+    "enabled": true,
+    "cron": "0 6 * * *",
+    "label": "Daily at 6:00 AM"
+  },
+  "lastRun": null,
+  "lastRunStatus": null
+}

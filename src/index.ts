@@ -12,6 +12,7 @@ import { classifyLeads } from './pipeline/classify';
 import { enrichLeads } from './pipeline/enrich';
 import { appendLeadsToSheet } from './storage/sheets';
 import { sendDigest } from './delivery/digest';
+import { updateLastRun } from './config/keywords';
 
 // ─── Source registry ──────────────────────────────────────────────────────────
 
@@ -36,6 +37,8 @@ const SOURCES: Array<{
  * crashing the entire run.
  */
 export async function run(): Promise<void> {
+  const startTime = Date.now();
+
   console.log('\n========================================');
   console.log('  JAQYI Lead Pipeline — Starting Run');
   console.log(`  ${new Date().toISOString()}`);
@@ -59,24 +62,29 @@ export async function run(): Promise<void> {
 
   if (allRaw.length === 0) {
     console.log('[run] No leads fetched. Exiting.');
+    updateLastRun('failed', 'No leads fetched from any source');
     return;
   }
 
   // ── Stage 2: Dedupe (before enrichment to protect Apollo credits) ─────────
   console.log('\n[run] ▶ Deduplicating…');
   const fresh = dedupeLeads(allRaw);
+  console.log(`[run] ${fresh.length} fresh leads after dedup (${allRaw.length - fresh.length} dupes removed)`);
 
   if (fresh.length === 0) {
     console.log('[run] All leads already seen. Nothing new to process.');
+    updateLastRun('success', 'No new leads — all already processed');
     return;
   }
 
   // ── Stage 3: Classify via Claude ─────────────────────────────────────────
   console.log('\n[run] ▶ Classifying with Claude…');
   const classified = await classifyLeads(fresh);
+  console.log(`[run] ${classified.length} leads passed classification`);
 
   if (classified.length === 0) {
     console.log('[run] No leads passed classification filter. Exiting.');
+    updateLastRun('failed', `0/${fresh.length} leads passed classifier`);
     return;
   }
 
@@ -88,6 +96,7 @@ export async function run(): Promise<void> {
   console.log('\n[run] ▶ Appending to Google Sheets…');
   try {
     await appendLeadsToSheet(enriched);
+    console.log(`[run] ✓ Wrote ${enriched.length} leads to sheet`);
   } catch (err) {
     console.error('[run] ✖ Sheets storage failed:', err);
   }
@@ -96,18 +105,58 @@ export async function run(): Promise<void> {
   console.log('\n[run] ▶ Sending digest email…');
   try {
     await sendDigest(enriched);
+    console.log('[run] ✓ Digest email sent');
   } catch (err) {
     console.error('[run] ✖ Digest delivery failed:', err);
   }
 
+  const elapsed = Math.round((Date.now() - startTime) / 1000);
   console.log('\n========================================');
-  console.log(`  Run complete. ${enriched.length} leads processed.`);
+  console.log(`  Run complete. ${enriched.length} leads processed in ${elapsed}s`);
   console.log('========================================\n');
+
+  updateLastRun('success', `${enriched.length} leads processed in ${elapsed}s`);
 }
 
-// ─── Direct invocation entrypoint ────────────────────────────────────────────
+// ─── Scheduler mode vs single-run mode ───────────────────────────────────────
+// Run with: npm run start          → single run
+//           npm run schedule       → stays alive with cron
 
-run().catch((err) => {
-  console.error('[run] Unhandled fatal error:', err);
-  process.exit(1);
-});
+const IS_SCHEDULE_MODE = process.argv.includes('--schedule');
+
+if (IS_SCHEDULE_MODE) {
+  // Load config for schedule
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const cron = require('node-cron');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const fs = require('fs');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const path = require('path');
+  const configPath = path.resolve(__dirname, '../../pipeline-config.json');
+
+  let cronExpression = '0 6 * * *'; // default: daily 6am
+  try {
+    const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    cronExpression = cfg.schedule?.cron ?? cronExpression;
+    console.log(`[scheduler] Started — cron: "${cronExpression}" (${cfg.schedule?.label ?? ''})`);
+  } catch {
+    console.log(`[scheduler] Started with default cron: "${cronExpression}"`);
+  }
+
+  // Run immediately on start, then on schedule
+  run().catch(console.error);
+
+  cron.schedule(cronExpression, () => {
+    console.log(`\n[scheduler] Cron triggered at ${new Date().toISOString()}`);
+    run().catch(console.error);
+  });
+
+  console.log('[scheduler] Press Ctrl+C to stop.\n');
+} else {
+  // Single run mode
+  run().catch((err) => {
+    console.error('[run] Unhandled fatal error:', err);
+    updateLastRun('failed', String(err));
+    process.exit(1);
+  });
+}
