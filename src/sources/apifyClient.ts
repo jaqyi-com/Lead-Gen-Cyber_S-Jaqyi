@@ -3,12 +3,33 @@ import axios from 'axios';
 const APIFY_TOKEN = process.env.APIFY_TOKEN!;
 
 /**
+ * Builds Google Search startUrls with `tbs=qdr:dN` (past N days) time filter.
+ *
+ * WHY tbs=qdr:dN instead of after:YYYY-MM-DD:
+ * - `after:` filters by page INDEX date, unreliable — returns old pages Google re-crawled
+ * - `tbs=qdr:d2` uses Google's "Tools > Past 2 days" UI filter, same as clicking the button
+ * - Much more accurate for freshness: only returns pages Google DETECTED as new/updated recently
+ *
+ * This is a URL parameter separate from q=, so it must be embedded in startUrls[]
+ * rather than the queries[] field.
+ */
+export function buildGoogleStartUrls(
+  queries: string[],
+  daysBack = parseInt(process.env.FRESHNESS_DAYS ?? '2', 10)
+): { url: string }[] {
+  // tbs=qdr:d1 = past day, qdr:d2 = past 2 days, qdr:w = past week
+  const tbs = `qdr:d${daysBack}`;
+  return queries.map((q) => ({
+    url: `https://www.google.com/search?q=${encodeURIComponent(q)}&tbs=${tbs}&hl=en&num=10`,
+  }));
+}
+
+/**
  * Helper: Start an Apify actor run, poll until SUCCEEDED, return dataset items.
  * Avoids the 120-second timeout of run-sync-get-dataset-items for slow actors.
  *
  * For apify/google-search-scraper: each dataset item = one query page, with
- * organicResults[] containing the actual 10 search results. This function
- * automatically flattens those into individual result items.
+ * organicResults[] containing the actual results. This function auto-flattens them.
  */
 export async function runApifyActor(
   actorId: string,
@@ -26,7 +47,7 @@ export async function runApifyActor(
   if (!runId) throw new Error(`Failed to start actor ${actorId}`);
   console.log(`  [apify] Run started: ${runId}`);
 
-  // 2. Poll until finished (SUCCEEDED / FAILED / ABORTED / TIMED-OUT)
+  // 2. Poll until finished
   const startTime = Date.now();
   const POLL_INTERVAL = 5_000;
   let status = 'RUNNING';
@@ -53,15 +74,15 @@ export async function runApifyActor(
 
   const rawItems = Array.isArray(itemsRes.data) ? itemsRes.data : [];
 
-  // 4. Flatten Google Search Scraper results:
-  //    Each item has organicResults[] — expand them into individual result objects.
-  if (rawItems.length > 0 && Array.isArray(rawItems[0]?.organicResults)) {
+  // 4. Flatten Google Search Scraper results (organicResults[] per page)
+  if (rawItems.length > 0 && Array.isArray((rawItems[0] as Record<string, unknown>)?.organicResults)) {
     const flattened: Record<string, unknown>[] = [];
     for (const pageItem of rawItems) {
       const organic = (pageItem as Record<string, unknown>).organicResults as Record<string, unknown>[];
-      for (const result of organic) {
-        // Promote organic result fields to top-level
-        flattened.push(result as Record<string, unknown>);
+      if (Array.isArray(organic)) {
+        for (const result of organic) {
+          flattened.push(result as Record<string, unknown>);
+        }
       }
     }
     console.log(`  [apify] Flattened ${rawItems.length} search pages → ${flattened.length} organic results`);

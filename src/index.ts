@@ -13,6 +13,7 @@ import { enrichLeads } from './pipeline/enrich';
 import { appendLeadsToSheet } from './storage/sheets';
 import { sendDigest } from './delivery/digest';
 import { updateLastRun } from './config/keywords';
+import { isFresh, FRESHNESS_DAYS, afterDateString } from './utils/freshness';
 
 // ─── Source registry ──────────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ export async function run(): Promise<void> {
   console.log('\n========================================');
   console.log('  JAQYI Lead Pipeline — Starting Run');
   console.log(`  ${new Date().toISOString()}`);
+  console.log(`  Freshness window: last ${FRESHNESS_DAYS} days (after:${afterDateString()})`);
   console.log('========================================\n');
 
   // ── Stage 1: Fetch (per-source fault isolation) ───────────────────────────
@@ -60,6 +62,20 @@ export async function run(): Promise<void> {
 
   console.log(`\n[run] Total normalized leads: ${allRaw.length}`);
 
+  // ── Stage 1.5: Freshness filter ───────────────────────────────────────────
+  // Drop leads whose postedAt date is older than FRESHNESS_DAYS.
+  // Sources already inject after: into queries; this is a second-pass safety net.
+  const fresh0 = allRaw.filter((lead) => isFresh(lead.postedAt));
+  if (fresh0.length < allRaw.length) {
+    console.log(`[run] ▶ Freshness filter: kept ${fresh0.length}/${allRaw.length} (dropped ${allRaw.length - fresh0.length} stale leads)`);
+  }
+
+  if (fresh0.length === 0) {
+    console.log('[run] No fresh leads fetched. Exiting.');
+    updateLastRun('failed', 'No fresh leads from any source');
+    return;
+  }
+
   if (allRaw.length === 0) {
     console.log('[run] No leads fetched. Exiting.');
     updateLastRun('failed', 'No leads fetched from any source');
@@ -68,8 +84,8 @@ export async function run(): Promise<void> {
 
   // ── Stage 2: Dedupe (before enrichment to protect Apollo credits) ─────────
   console.log('\n[run] ▶ Deduplicating…');
-  const fresh = dedupeLeads(allRaw);
-  console.log(`[run] ${fresh.length} fresh leads after dedup (${allRaw.length - fresh.length} dupes removed)`);
+  const fresh = dedupeLeads(fresh0);
+  console.log(`[run] ${fresh.length} fresh leads after dedup (${fresh0.length - fresh.length} dupes removed)`);
 
   if (fresh.length === 0) {
     console.log('[run] All leads already seen. Nothing new to process.');

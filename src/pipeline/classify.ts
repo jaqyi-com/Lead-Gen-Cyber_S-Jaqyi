@@ -4,7 +4,7 @@ import { RawLead } from './normalize';
 // ─── OpenRouter config ────────────────────────────────────────────────────────
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
 const MODEL = process.env.OPENROUTER_MODEL ?? 'openai/gpt-4o-mini';
-const MIN_SCORE = parseInt(process.env.MIN_INTENT_SCORE ?? '2', 10);
+const MIN_SCORE = parseInt(process.env.MIN_INTENT_SCORE ?? '3', 10);
 
 export type LeadCategory =
   | 'IT & Software'
@@ -36,41 +36,50 @@ const VALID_CATEGORIES: LeadCategory[] = [
   'none',
 ];
 
-function truncate(text: string, maxChars = 800): string {
+function truncate(text: string, maxChars = 1000): string {
   return text.length > maxChars ? text.slice(0, maxChars) + '…' : text;
 }
 
 function buildPrompt(lead: RawLead): string {
-  return `You are a lead qualification expert for JAQYI, a dev studio offering:
-- IT & Software development (React, Node.js, TypeScript, Python)
-- AI & AI Agents (OpenAI, Claude, LangChain, RAG systems)
-- Automation (n8n, workflows, API integrations)
-- SaaS Products (full-stack SaaS, CRM, platforms)
-- Mobile & Web Apps (React Native, Flutter, Next.js)
+  return `You are a business development analyst for JAQYI, a software studio that builds:
+- IT & Software: custom software, APIs, backends (React, Node.js, TypeScript, Python)
+- AI & AI Agents: RAG systems, LLM integrations, OpenAI/Claude/LangChain projects
+- Automation: n8n workflows, API integrations, data pipelines
+- SaaS Products: full-stack SaaS platforms, CRMs, dashboards
+- Mobile & Web Apps: React Native, Flutter, Next.js applications
 
-Analyze this post and score it for BUYING INTENT — meaning: is this a person/company ACTIVELY LOOKING TO HIRE a developer?
+YOUR TASK: Determine if this is a PROJECT REQUIREMENT POST — meaning a company or individual DESCRIBING A PROJECT THEY NEED BUILT and seeking a development partner or contractor.
 
 Title: ${lead.title}
 Description: ${truncate(lead.description)}
 Source: ${lead.source}
 URL: ${lead.url}
 
-Scoring guide:
-5 = Explicit hire request with budget/timeline ("[HIRING] need React dev, $5k budget")
-4 = Clear hiring intent, specific tech mentioned ("Looking for AI agent developer")
-3 = Probable hiring intent, somewhat specific ("Need help with n8n automation")
-2 = Possible hiring intent, vague ("Anyone know a good dev?")
-1 = No hiring intent (job seeker, article, discussion, profile page)
+SCORE BASED ON PROJECT QUALITY:
+5 = Detailed project specification with scope, tech requirements, budget/timeline, clear deliverables (like an RFP or detailed Freelancer/Upwork job post). HIGH VALUE — pursue immediately.
+4 = Clear project description, specific tech stack mentioned, looking for someone to build it. Budget may or may not be stated.
+3 = Someone clearly wants something built, reasonably specific about what they need. Could be a reddit [HIRING] post or LinkedIn post with a real project.
+2 = Vague project inquiry, mentions needing development help but unclear scope.
+1 = NOT a project requirement:
+    - [FOR HIRE] or freelancer advertising their services
+    - Generic "how to hire a developer" articles
+    - Discussion/opinion threads ("best language for X?")
+    - Job board category pages (listing pages, not individual posts)
+    - Freelancer profile pages
+    - Social media profile bios
+    - News articles, tutorials, guides
 
-IMPORTANT: Job board LISTING pages ("Node.js Jobs for August 2026") = score 1, category "none".
-Freelancer/Upwork PROFILE pages = score 1, category "none".
-Actual PROJECT POSTS or HIRING POSTS = score 3-5.
+STRICT RULES:
+- If title contains "[FOR HIRE]" → always score 1, category "none"
+- If it's someone OFFERING services not REQUESTING them → score 1, category "none"
+- If it's an article, tutorial, or opinion piece → score 1, category "none"  
+- Only score 3+ if a real entity is LOOKING TO HIRE someone to BUILD something for them
 
-Return JSON only (no markdown):
+Return JSON only (no markdown, no explanation):
 {
   "category": one of ["IT & Software","AI & AI Agents","Automation","SaaS Products","Mobile & Web Apps","none"],
   "buyingIntentScore": 1-5,
-  "reasoning": "one sentence explaining why"
+  "reasoning": "one sentence: what they want built and why scored this way"
 }`;
 }
 
@@ -83,7 +92,6 @@ interface RawClassification {
 function parseClassification(raw: string): RawClassification | null {
   try {
     const cleaned = raw.replace(/```json|```/g, '').trim();
-    // Extract JSON object even if there's surrounding text
     const match = cleaned.match(/\{[\s\S]*\}/);
     if (!match) return null;
     return JSON.parse(match[0]) as RawClassification;
@@ -99,6 +107,7 @@ async function classifyOne(lead: RawLead): Promise<ClassifiedLead | null> {
       {
         model: MODEL,
         max_tokens: 200,
+        temperature: 0.1, // Low temperature for consistent classification
         messages: [{ role: 'user', content: buildPrompt(lead) }],
       },
       {
@@ -137,8 +146,9 @@ async function classifyOne(lead: RawLead): Promise<ClassifiedLead | null> {
 }
 
 /**
- * Classifies an array of leads via OpenRouter, batched to respect rate limits.
- * Discards leads scoring below MIN_INTENT_SCORE or classified as 'none'.
+ * Classifies leads via OpenRouter.
+ * Focused on PROJECT REQUIREMENT quality — score 3+ means real project to quote on.
+ * Batched to respect rate limits.
  */
 export async function classifyLeads(leads: RawLead[]): Promise<ClassifiedLead[]> {
   const results: ClassifiedLead[] = [];
@@ -152,13 +162,14 @@ export async function classifyLeads(leads: RawLead[]): Promise<ClassifiedLead[]>
     for (const item of classified) {
       if (!item) continue;
       if (item.category === 'none') {
-        console.log(`[classify] Dropped (none): ${item.title.slice(0, 60)}`);
+        console.log(`[classify] Dropped (not a project post): ${item.title.slice(0, 70)}`);
         continue;
       }
       if (item.buyingIntentScore < MIN_SCORE) {
-        console.log(`[classify] Dropped (score ${item.buyingIntentScore} < ${MIN_SCORE}): ${item.title.slice(0, 60)}`);
+        console.log(`[classify] Dropped (score ${item.buyingIntentScore} < ${MIN_SCORE}): ${item.title.slice(0, 70)}`);
         continue;
       }
+      console.log(`[classify] ✓ KEPT (score ${item.buyingIntentScore}, ${item.category}): ${item.title.slice(0, 70)}`);
       results.push(item);
     }
 
@@ -167,6 +178,6 @@ export async function classifyLeads(leads: RawLead[]): Promise<ClassifiedLead[]>
     }
   }
 
-  console.log(`[classify] ${leads.length} leads → ${results.length} passed (min score ${MIN_SCORE}, model: ${MODEL})`);
+  console.log(`[classify] ${leads.length} leads → ${results.length} qualified projects (min score ${MIN_SCORE}, model: ${MODEL})`);
   return results;
 }

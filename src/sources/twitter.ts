@@ -1,22 +1,24 @@
-import { runApifyActor } from './apifyClient';
+import { runApifyActor, buildGoogleStartUrls } from './apifyClient';
 
 /**
- * Finds buyer-intent signals on Twitter/X via Google Search.
- * Looks for individual tweets where people are actively looking to hire.
+ * Twitter/X — decision makers posting project requirements.
+ * Uses tbs=qdr:d2 for strictly recent results.
+ * Targets /status/ URLs (individual tweets) only.
  */
 
 const QUERIES = [
-  'site:twitter.com "looking for" "AI developer" OR "AI engineer" hire budget',
-  'site:twitter.com "need" "automation developer" OR "n8n developer"',
-  'site:twitter.com "hiring" "full stack developer" OR "React developer" remote',
-  'site:twitter.com "looking to hire" developer SaaS OR "web app"',
-  'site:x.com "looking for" developer "AI" OR "automation" budget',
-].join('\n');
+  // Project requirements with budget signals
+  'site:twitter.com "need to build" "AI agent" OR "AI system" budget -"for hire"',
+  'site:twitter.com "looking for" "AI developer" OR "AI engineer" "build" budget',
+  'site:twitter.com "need" "automation" OR "n8n" developer "project" -"for hire"',
+  'site:twitter.com "hiring" "full stack" OR "Next.js" "build" "SaaS" OR "platform"',
+  'site:x.com "looking to build" "AI" OR "automation" OR "SaaS" developer budget',
+];
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
   const items = await runApifyActor('apify/google-search-scraper', {
-    queries: QUERIES,
-    maxPagesPerQuery: 1,
+    startUrls: buildGoogleStartUrls(QUERIES, 2),
+    maxPagesPerStartUrl: 1,
     resultsPerPage: 10,
     languageCode: 'en',
     countryCode: 'us',
@@ -26,11 +28,10 @@ export async function fetchLeads(): Promise<Record<string, unknown>[]> {
 
   const filtered = items.filter((item) => {
     const url = String((item as Record<string, unknown>).url ?? '');
-    // Individual tweet or post — contains a username path segment
-    return (url.includes('twitter.com/') || url.includes('x.com/')) &&
-      (url.includes('/status/') || url.split('/').length > 4);
+    // Individual tweets only via /status/
+    return (url.includes('twitter.com/') || url.includes('x.com/')) && url.includes('/status/');
   });
 
-  console.log(`[twitter] ${items.length} results → ${filtered.length} Twitter/X posts`);
+  console.log(`[twitter] ${items.length} results → ${filtered.length} tweets (last 2 days)`);
   return filtered;
 }
