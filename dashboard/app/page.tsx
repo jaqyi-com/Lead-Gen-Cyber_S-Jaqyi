@@ -2,7 +2,8 @@ import { fetchAllLeads } from '@/lib/sheets';
 import { CATEGORY_COLORS } from '@/lib/types';
 import OverviewClient from '@/components/OverviewClient';
 
-export const revalidate = 300;
+// Force dynamic — never pre-rendered at build time (requires runtime credentials)
+export const dynamic = 'force-dynamic';
 
 export default async function OverviewPage() {
   let leads = await fetchAllLeads().catch(() => []);

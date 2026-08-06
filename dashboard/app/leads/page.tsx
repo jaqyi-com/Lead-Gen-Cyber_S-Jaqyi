@@ -1,7 +1,8 @@
 import { fetchAllLeads } from '@/lib/sheets';
 import LeadsTable from '@/components/LeadsTable';
 
-export const revalidate = 300;
+// Force dynamic — never pre-rendered at build time
+export const dynamic = 'force-dynamic';
 
 export default async function LeadsPage() {
   const leads = await fetchAllLeads().catch(() => []);
