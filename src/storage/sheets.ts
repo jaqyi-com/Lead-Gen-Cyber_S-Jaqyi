@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { EnrichedLead } from '../pipeline/enrich';
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
-const TAB_NAME = process.env.GOOGLE_SHEET_TAB_NAME ?? 'Leads';
+const TAB_NAME = process.env.GOOGLE_SHEET_TAB_NAME ?? 'Sheet1';
 
 /** Column headers — order must match row building below */
 const HEADERS = [
