@@ -2,7 +2,7 @@ import { google } from 'googleapis';
 import { Lead } from './types';
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
-const TAB_NAME = process.env.GOOGLE_SHEET_TAB_NAME ?? 'Leads';
+const TAB_NAME = process.env.GOOGLE_SHEET_TAB_NAME ?? 'Sheet1';
 
 function getCredentials(): Record<string, unknown> {
   // Vercel: inline JSON via env var (set GOOGLE_SHEETS_CREDENTIALS_JSON)

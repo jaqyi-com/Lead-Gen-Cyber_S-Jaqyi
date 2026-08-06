@@ -37,18 +37,19 @@ function strOpt(v: unknown): string | undefined {
 // ─── Per-source normalizers ───────────────────────────────────────────────────
 
 function normalizeFreelancer(raw: Record<string, unknown>): RawLead | null {
-  const url = str(raw.url ?? raw.jobUrl ?? raw.link ?? raw.id ?? '');
-  if (!url) return null;
+  // Now uses Google Search scraper → freelancer.com/projects URLs
+  const url = str(raw.url ?? raw.link ?? '');
+  if (!url || !url.includes('freelancer.com')) return null;
 
   return {
     source: 'freelancer',
-    title: str(raw.title ?? raw.name ?? 'Untitled'),
-    description: str(raw.description ?? raw.snippet ?? raw.details ?? ''),
+    title: str(raw.title ?? raw.heading ?? 'Untitled'),
+    description: str(raw.description ?? raw.snippet ?? raw.text ?? ''),
     url,
-    budget: strOpt(raw.budget ?? raw.budgetFormatted ?? raw.price),
-    postedAt: str(raw.postedAt ?? raw.date ?? raw.createdAt ?? new Date().toISOString()),
-    authorName: strOpt(raw.clientName ?? raw.author ?? raw.username),
-    authorHandle: strOpt(raw.clientUsername ?? raw.authorHandle),
+    budget: strOpt(raw.budget),
+    postedAt: str(raw.date ?? raw.publishedDate ?? new Date().toISOString()),
+    authorName: strOpt(raw.name ?? raw.author),
+    authorHandle: undefined,
   };
 }
 
