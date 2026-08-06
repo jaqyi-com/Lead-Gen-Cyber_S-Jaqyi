@@ -29,8 +29,12 @@ export async function fetchLeads(): Promise<Record<string, unknown>[]> {
 
   const filtered = items.filter((item) => {
     const url = String((item as Record<string, unknown>).url ?? '');
-    // Only individual project pages, not category listing pages
-    return url.includes('freelancer.com/projects/') && /\/\d+/.test(url);
+    if (!url.includes('freelancer.com/projects/')) return false;
+    // Individual project pages have at least 2 path segments after /projects/
+    // e.g. /projects/javascript/chatgpt-api-integration-39786270
+    // Category listing pages are /projects/javascript (only 1 segment)
+    const afterProjects = url.split('/projects/')[1] ?? '';
+    return afterProjects.split('/').length >= 2;
   });
 
   console.log(`[freelancer] ${items.length} results → ${filtered.length} individual project pages`);

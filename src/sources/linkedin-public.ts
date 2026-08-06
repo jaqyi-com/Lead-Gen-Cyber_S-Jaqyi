@@ -9,15 +9,14 @@ import { runApifyActor } from './apifyClient';
  */
 
 const LINKEDIN_QUERIES = [
-  'site:linkedin.com/posts "looking for" "AI developer" OR "AI agent developer"',
-  'site:linkedin.com/posts "looking to hire" "automation" OR "n8n" developer',
-  'site:linkedin.com/posts "hiring" "full stack" OR "Next.js" developer',
-  'site:linkedin.com/posts "need a developer" SaaS OR "web app"',
-  'site:linkedin.com/posts "looking for" "mobile app developer" React Native',
-  'site:linkedin.com/posts "build" "AI chatbot" hire budget',
-  'site:linkedin.com/posts "developer needed" software OR "web application"',
-  'site:linkedin.com/posts "CTO" OR "technical co-founder" "looking for" startup',
-  'site:linkedin.com/pulse "hire" "AI developer" OR "automation developer" 2026',
+  'site:linkedin.com/posts "looking for" "AI developer" OR "AI agent" -"for hire"',
+  'site:linkedin.com/posts "looking to hire" "automation" OR "n8n" developer -"for hire"',
+  'site:linkedin.com/posts "hiring" "full stack" OR "Next.js" developer -"for hire"',
+  'site:linkedin.com/posts "need a developer" SaaS OR "web app" -"for hire"',
+  'site:linkedin.com/posts "looking for" "mobile app developer" -"for hire"',
+  'site:linkedin.com/posts "developer needed" software OR "web application" -"for hire"',
+  'site:linkedin.com/posts "CTO" OR "technical co-founder" startup "looking for" -"for hire"',
+  'site:linkedin.com/posts "need" "AI agent" OR "chatbot" developer budget -"for hire"',
 ].join('\n');
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {

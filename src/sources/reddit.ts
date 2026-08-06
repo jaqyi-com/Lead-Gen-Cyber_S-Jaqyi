@@ -7,13 +7,13 @@ import { runApifyActor } from './apifyClient';
  */
 
 const QUERIES = [
-  'site:reddit.com/r/forhire "[hiring]" AI developer OR AI agent',
-  'site:reddit.com/r/forhire "[hiring]" automation developer n8n',
-  'site:reddit.com/r/forhire "[hiring]" SaaS developer web app',
-  'site:reddit.com/r/forhire "[hiring]" mobile app React Native Flutter',
-  'site:reddit.com/r/forhire "[hiring]" Next.js React full stack',
-  'site:reddit.com/r/hiring "looking for" AI developer budget',
-  'site:reddit.com/r/entrepreneur "looking to hire" developer software',
+  'site:reddit.com/r/forhire "[hiring]" AI developer OR AI agent -"for hire"',
+  'site:reddit.com/r/forhire "[hiring]" automation developer n8n -"for hire"',
+  'site:reddit.com/r/forhire "[hiring]" SaaS developer web app -"for hire"',
+  'site:reddit.com/r/forhire "[hiring]" mobile app React Native Flutter -"for hire"',
+  'site:reddit.com/r/forhire "[hiring]" Next.js React full stack -"for hire"',
+  'site:reddit.com/r/hiring "looking for" AI developer budget -"for hire"',
+  'site:reddit.com/r/entrepreneur "looking to hire" developer software -"for hire"',
   'site:reddit.com/r/startups "need a developer" OR "hire developer" budget',
   'site:reddit.com/r/SaaS "need developer" OR "looking for CTO" technical',
 ].join('\n');
