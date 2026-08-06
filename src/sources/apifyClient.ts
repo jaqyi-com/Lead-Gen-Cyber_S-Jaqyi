@@ -3,33 +3,33 @@ import axios from 'axios';
 const APIFY_TOKEN = process.env.APIFY_TOKEN!;
 
 /**
- * Builds Google Search startUrls with `tbs=qdr:dN` (past N days) time filter.
+ * Builds a newline-joined queries string with Google date range operators.
  *
- * WHY tbs=qdr:dN instead of after:YYYY-MM-DD:
- * - `after:` filters by page INDEX date, unreliable — returns old pages Google re-crawled
- * - `tbs=qdr:d2` uses Google's "Tools > Past 2 days" UI filter, same as clicking the button
- * - Much more accurate for freshness: only returns pages Google DETECTED as new/updated recently
- *
- * This is a URL parameter separate from q=, so it must be embedded in startUrls[]
- * rather than the queries[] field.
+ * WHY after:DATE AND before:DATE together:
+ * Using both operators creates a tight explicit date window that Google respects better
+ * than using either alone. Set 3-day window to allow for indexing lag.
  */
-export function buildGoogleStartUrls(
-  queries: string[],
-  daysBack = parseInt(process.env.FRESHNESS_DAYS ?? '2', 10)
-): { url: string }[] {
-  // tbs=qdr:d1 = past day, qdr:d2 = past 2 days, qdr:w = past week
-  const tbs = `qdr:d${daysBack}`;
-  return queries.map((q) => ({
-    url: `https://www.google.com/search?q=${encodeURIComponent(q)}&tbs=${tbs}&hl=en&num=10`,
-  }));
+export function buildDatedQueries(queries: string[]): string {
+  const daysBack = parseInt(process.env.FRESHNESS_DAYS ?? '2', 10);
+  const afterDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - daysBack);
+    return d.toISOString().slice(0, 10);
+  })();
+  const beforeDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  // Append date window to each query
+  return queries
+    .map((q) => `${q} after:${afterDate} before:${beforeDate}`)
+    .join('\n');
 }
 
 /**
  * Helper: Start an Apify actor run, poll until SUCCEEDED, return dataset items.
- * Avoids the 120-second timeout of run-sync-get-dataset-items for slow actors.
- *
- * For apify/google-search-scraper: each dataset item = one query page, with
- * organicResults[] containing the actual results. This function auto-flattens them.
+ * For apify/google-search-scraper: flattens organicResults[] per page.
  */
 export async function runApifyActor(
   actorId: string,
@@ -53,7 +53,7 @@ export async function runApifyActor(
   let status = 'RUNNING';
 
   while (status === 'RUNNING' || status === 'READY' || status === 'FETCHING') {
-    if (Date.now() - startTime > timeoutMs) throw new Error(`Actor ${actorId} timed out after ${timeoutMs}ms`);
+    if (Date.now() - startTime > timeoutMs) throw new Error(`Actor ${actorId} timed out`);
     await new Promise((r) => setTimeout(r, POLL_INTERVAL));
     const statusRes = await axios.get(
       `https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`,
@@ -63,7 +63,7 @@ export async function runApifyActor(
     console.log(`  [apify] Run ${runId} status: ${status}`);
   }
 
-  if (status !== 'SUCCEEDED') throw new Error(`Actor ${actorId} run ${runId} ended with status: ${status}`);
+  if (status !== 'SUCCEEDED') throw new Error(`Actor ${actorId} run ${runId} ended: ${status}`);
 
   // 3. Fetch dataset items
   const datasetId: string = runRes.data?.data?.defaultDatasetId;
@@ -74,7 +74,7 @@ export async function runApifyActor(
 
   const rawItems = Array.isArray(itemsRes.data) ? itemsRes.data : [];
 
-  // 4. Flatten Google Search Scraper results (organicResults[] per page)
+  // 4. Flatten organicResults[] from Google Search Scraper
   if (rawItems.length > 0 && Array.isArray((rawItems[0] as Record<string, unknown>)?.organicResults)) {
     const flattened: Record<string, unknown>[] = [];
     for (const pageItem of rawItems) {

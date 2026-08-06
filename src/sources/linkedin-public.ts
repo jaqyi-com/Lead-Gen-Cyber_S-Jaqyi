@@ -1,4 +1,4 @@
-import { runApifyActor, buildGoogleStartUrls } from './apifyClient';
+import { runApifyActor, buildDatedQueries } from './apifyClient';
 
 /**
  * LinkedIn-PUBLIC — decision-maker posts describing projects they need built.
@@ -25,8 +25,8 @@ const QUERIES = [
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
   const items = await runApifyActor('apify/google-search-scraper', {
-    startUrls: buildGoogleStartUrls(QUERIES, 2),
-    maxPagesPerStartUrl: 2,
+    queries: buildDatedQueries(QUERIES),
+    maxPagesPerQuery: 2,
     resultsPerPage: 10,
     languageCode: 'en',
     countryCode: 'us',

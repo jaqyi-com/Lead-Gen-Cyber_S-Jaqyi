@@ -1,4 +1,4 @@
-import { runApifyActor, buildGoogleStartUrls } from './apifyClient';
+import { runApifyActor, buildDatedQueries } from './apifyClient';
 
 /**
  * Freelancer.com — project REQUIREMENT posts (buyers posting projects they need built).
@@ -25,8 +25,8 @@ const QUERIES = [
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
   const items = await runApifyActor('apify/google-search-scraper', {
-    startUrls: buildGoogleStartUrls(QUERIES, 2),
-    maxPagesPerStartUrl: 1,
+    queries: buildDatedQueries(QUERIES),
+    maxPagesPerQuery: 1,
     resultsPerPage: 10,
     languageCode: 'en',
     countryCode: 'us',
