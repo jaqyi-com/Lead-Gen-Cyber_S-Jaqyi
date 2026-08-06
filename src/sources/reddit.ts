@@ -1,28 +1,43 @@
 import { runApifyActor } from './apifyClient';
-import { SOCIAL_KEYWORDS } from '../config/keywords';
-import { TARGET_SUBREDDITS } from '../config/subreddits';
 
 /**
- * Fetches Reddit posts via Apify using search URLs.
- * Actor: apify/reddit-scraper (official free Apify actor)
- * Input: startUrls with Reddit search URLs
- *
- * Note: trudax/reddit-scraper requires a paid subscription.
- * apify/reddit-scraper is the official free alternative.
+ * Fetches Reddit posts from buying-intent subreddits using Google Search.
+ * - apify/reddit-scraper is 404 (actor doesn't exist at that slug)
+ * - trudax/reddit-scraper requires a paid subscription
+ * - Google Search on site:reddit.com is free, reliable, and works well
  */
-export async function fetchLeads(): Promise<Record<string, unknown>[]> {
-  // Build Reddit search URLs for top subreddits × top keywords
-  const searchUrls = TARGET_SUBREDDITS.slice(0, 5).flatMap((sub) =>
-    SOCIAL_KEYWORDS.slice(0, 3).map((kw) => ({
-      url: `https://www.reddit.com/r/${sub}/search/?q=${encodeURIComponent(kw)}&sort=new&restrict_sr=1`,
-    }))
-  );
 
-  const items = await runApifyActor('apify/reddit-scraper', {
-    startUrls: searchUrls,
-    maxItems: 100,
-    skipComments: true,
+const REDDIT_QUERIES = [
+  'site:reddit.com/r/forhire "[hiring]" AI developer',
+  'site:reddit.com/r/forhire "[hiring]" automation developer',
+  'site:reddit.com/r/forhire "[hiring]" SaaS developer',
+  'site:reddit.com/r/forhire "[hiring]" web app developer',
+  'site:reddit.com/r/forhire "[hiring]" mobile app developer',
+  'site:reddit.com/r/hiring "AI agent" developer',
+  'site:reddit.com/r/entrepreneur "looking for developer" OR "need a developer"',
+  'site:reddit.com/r/startups "looking for" developer hire budget',
+  'site:reddit.com/r/SaaS "need developer" OR "looking for developer"',
+].join('\n');
+
+export async function fetchLeads(): Promise<Record<string, unknown>[]> {
+  const items = await runApifyActor('apify/google-search-scraper', {
+    queries: REDDIT_QUERIES,
+    maxPagesPerQuery: 1,
+    resultsPerPage: 10,
+    languageCode: 'en',
+    countryCode: 'us',
+    saveHtml: false,
+    saveHtmlToKeyValueStore: false,
   });
-  console.log(`[reddit] Fetched ${items.length} raw items`);
-  return items;
+
+  const redditItems = items.filter((item) => {
+    const url = String(
+      (item as Record<string, unknown>).url ??
+      (item as Record<string, unknown>).link ?? ''
+    );
+    return url.includes('reddit.com');
+  });
+
+  console.log(`[reddit] ${items.length} Google results → ${redditItems.length} Reddit posts`);
+  return redditItems;
 }

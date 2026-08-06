@@ -1,21 +1,34 @@
 import { runApifyActor } from './apifyClient';
-import { SOCIAL_KEYWORDS } from '../config/keywords';
 
 /**
- * Fetches tweets via Apify.
- * Actor: apify/twitter-scraper (correct actor ID — note: apify/twitter-scraper v2)
- * Input: searchTerms (array of search query strings)
+ * Fetches tweets via Apify Twitter scraper.
+ * Uses searchTerms[] input format for apify/twitter-scraper.
  */
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
-  const searchTerms = SOCIAL_KEYWORDS.slice(0, 8).map(
-    (kw) => `"${kw}" -is:retweet lang:en`
-  );
+  // Use Google Search as Twitter scraper requires auth/subscription
+  const QUERIES = [
+    'site:twitter.com "looking for" "AI developer" hire',
+    'site:twitter.com "need" "AI agent" developer budget',
+    'site:twitter.com "hiring" "automation developer" OR "n8n developer"',
+    'site:twitter.com "need developer" "web app" OR "SaaS"',
+    'site:twitter.com "looking for" "React" OR "Next.js" developer',
+  ].join('\n');
 
-  const items = await runApifyActor('apify/twitter-scraper', {
-    searchTerms,
-    maxTweets: 50,
-    queryType: 'Latest',
+  const items = await runApifyActor('apify/google-search-scraper', {
+    queries: QUERIES,
+    maxPagesPerQuery: 1,
+    resultsPerPage: 10,
+    languageCode: 'en',
+    countryCode: 'us',
+    saveHtml: false,
+    saveHtmlToKeyValueStore: false,
   });
-  console.log(`[twitter] Fetched ${items.length} raw items`);
-  return items;
+
+  const tweets = items.filter((item) => {
+    const url = String((item as Record<string, unknown>).url ?? (item as Record<string, unknown>).link ?? '');
+    return url.includes('twitter.com') || url.includes('x.com');
+  });
+
+  console.log(`[twitter] ${items.length} Google results → ${tweets.length} Twitter/X posts`);
+  return tweets;
 }

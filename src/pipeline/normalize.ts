@@ -2,7 +2,8 @@
  * normalize.ts
  *
  * Maps each source's raw Apify actor output to the canonical RawLead shape.
- * One normalizer function per source; unknown fields are dropped gracefully.
+ * ALL sources now use apify/google-search-scraper, so fields are consistent.
+ * Source-specific normalizers add domain-level URL validation only.
  */
 
 export type SourceName =
@@ -34,100 +35,68 @@ function strOpt(v: unknown): string | undefined {
   return s.length > 0 ? s : undefined;
 }
 
+/**
+ * Google Search Scraper output fields:
+ *   url / link      — the result page URL
+ *   title           — page title
+ *   description     — snippet text
+ *   date            — optional date from search
+ *   name / author   — optional site name
+ */
+function normalizeGoogleSearchResult(
+  raw: Record<string, unknown>,
+  source: SourceName,
+  domainCheck: (url: string) => boolean
+): RawLead | null {
+  const url = str(raw.url ?? raw.link ?? '');
+  if (!url || !domainCheck(url)) return null;
+
+  // Try to extract budget from snippet (e.g. "$500", "$50/hr")
+  const snippet = str(raw.description ?? raw.snippet ?? raw.text ?? '');
+  const budgetMatch = snippet.match(/\$[\d,]+(?:\/hr|\/hour|k|K)?/);
+
+  return {
+    source,
+    title: str(raw.title ?? raw.heading ?? 'Untitled'),
+    description: snippet,
+    url,
+    budget: budgetMatch ? budgetMatch[0] : strOpt(raw.budget),
+    postedAt: str(raw.date ?? raw.publishedDate ?? new Date().toISOString()),
+    authorName: strOpt(raw.name ?? raw.author ?? raw.displayLink),
+    authorHandle: undefined,
+  };
+}
+
 // ─── Per-source normalizers ───────────────────────────────────────────────────
 
 function normalizeFreelancer(raw: Record<string, unknown>): RawLead | null {
-  // Now uses Google Search scraper → freelancer.com/projects URLs
-  const url = str(raw.url ?? raw.link ?? '');
-  if (!url || !url.includes('freelancer.com')) return null;
-
-  return {
-    source: 'freelancer',
-    title: str(raw.title ?? raw.heading ?? 'Untitled'),
-    description: str(raw.description ?? raw.snippet ?? raw.text ?? ''),
-    url,
-    budget: strOpt(raw.budget),
-    postedAt: str(raw.date ?? raw.publishedDate ?? new Date().toISOString()),
-    authorName: strOpt(raw.name ?? raw.author),
-    authorHandle: undefined,
-  };
+  return normalizeGoogleSearchResult(raw, 'freelancer', (url) =>
+    url.includes('freelancer.com')
+  );
 }
 
 function normalizeUpwork(raw: Record<string, unknown>): RawLead | null {
-  const url = str(raw.url ?? raw.jobUrl ?? raw.link ?? '');
-  if (!url) return null;
-
-  const budgetObj = raw.budget as Record<string, unknown> | undefined;
-  const budgetFrom = raw.budgetFrom ?? budgetObj?.['from'] ?? raw.hourlyBudgetMin;
-  const budgetTo = raw.budgetTo ?? budgetObj?.['to'] ?? raw.hourlyBudgetMax;
-  const budgetStr =
-    budgetFrom && budgetTo
-      ? `$${budgetFrom}–$${budgetTo}`
-      : strOpt(raw.budget ?? raw.budgetAmount);
-
-  return {
-    source: 'upwork',
-    title: str(raw.title ?? raw.name ?? 'Untitled'),
-    description: str(raw.description ?? raw.snippet ?? raw.details ?? ''),
-    url,
-    budget: budgetStr,
-    postedAt: str(raw.publishedDate ?? raw.postedAt ?? raw.createdAt ?? new Date().toISOString()),
-    authorName: strOpt(raw.clientName ?? raw.author),
-    authorHandle: undefined,
-  };
+  return normalizeGoogleSearchResult(raw, 'upwork', (url) =>
+    url.includes('upwork.com')
+  );
 }
 
 function normalizeReddit(raw: Record<string, unknown>): RawLead | null {
-  const url = str(raw.url ?? raw.permalink ?? '');
-  if (!url) return null;
-
-  return {
-    source: 'reddit',
-    title: str(raw.title ?? 'Untitled'),
-    description: str(raw.body ?? raw.selftext ?? raw.text ?? raw.description ?? ''),
-    url: url.startsWith('http') ? url : `https://reddit.com${url}`,
-    budget: strOpt(raw.budget),
-    postedAt: raw.created_utc
-      ? new Date(Number(raw.created_utc) * 1000).toISOString()
-      : str(raw.postedAt ?? new Date().toISOString()),
-    authorName: strOpt(raw.author ?? raw.authorName),
-    authorHandle: strOpt(raw.author ?? raw.authorHandle),
-  };
+  return normalizeGoogleSearchResult(raw, 'reddit', (url) =>
+    url.includes('reddit.com')
+  );
 }
 
 function normalizeTwitter(raw: Record<string, unknown>): RawLead | null {
-  const url = str(raw.url ?? raw.tweetUrl ?? raw.link ?? '');
-  if (!url) return null;
-
-  const text = str(raw.text ?? raw.fullText ?? raw.content ?? '');
-
-  return {
-    source: 'twitter',
-    title: text.slice(0, 100),          // first 100 chars as title proxy
-    description: text,
-    url,
-    budget: strOpt(raw.budget),
-    postedAt: str(raw.createdAt ?? raw.date ?? raw.timestamp ?? new Date().toISOString()),
-    authorName: strOpt((raw.author as Record<string, unknown>)?.['name'] ?? raw.userName ?? raw.name),
-    authorHandle: strOpt((raw.author as Record<string, unknown>)?.['userName'] ?? raw.screenName ?? raw.authorHandle),
-  };
+  return normalizeGoogleSearchResult(raw, 'twitter', (url) =>
+    url.includes('twitter.com') || url.includes('x.com')
+  );
 }
 
 function normalizeLinkedinPublic(raw: Record<string, unknown>): RawLead | null {
-  // Google Search actor returns organicResults array items
-  const url = str(raw.url ?? raw.link ?? '');
-  if (!url || !url.includes('linkedin.com')) return null;
-
-  return {
-    source: 'linkedin-public',
-    title: str(raw.title ?? raw.heading ?? 'Untitled'),
-    description: str(raw.description ?? raw.snippet ?? raw.text ?? ''),
-    url,
-    budget: undefined,
-    postedAt: str(raw.date ?? raw.publishedDate ?? new Date().toISOString()),
-    authorName: strOpt(raw.name ?? raw.author),
-    authorHandle: undefined,
-  };
+  return normalizeGoogleSearchResult(raw, 'linkedin-public', (url) =>
+    url.includes('linkedin.com')
+  );
 }
 
 // ─── Dispatch ─────────────────────────────────────────────────────────────────

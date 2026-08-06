@@ -1,28 +1,24 @@
 import { runApifyActor } from './apifyClient';
-import { SOCIAL_KEYWORDS } from '../config/keywords';
 
 /**
- * Fetches Upwork job postings via Google Search scraper.
- *
- * The getdataforme/upwork-actor requires login and often times out.
- * Using apify/google-search-scraper on site:upwork.com/jobs/ is more
- * reliable and returns actual job postings with budget info in snippets.
+ * Fetches Upwork job postings via Google Search.
+ * Note: Relaxed URL filter — Google may index various upwork.com URL formats.
  */
 
-const UPWORK_QUERIES = [
-  'site:upwork.com/jobs "AI agent" developer',
-  'site:upwork.com/jobs "automation" "n8n" OR "workflow"',
-  'site:upwork.com/jobs "SaaS" developer',
-  'site:upwork.com/jobs "mobile app" React Native OR Flutter',
-  'site:upwork.com/jobs "Next.js" OR "React" full stack',
-  'site:upwork.com/jobs "OpenAI" OR "ChatGPT" integration',
-  'site:upwork.com/jobs "Python" "FastAPI" OR "Django"',
-  'site:upwork.com/jobs "machine learning" engineer',
+const QUERIES = [
+  'site:upwork.com "AI agent" developer',
+  'site:upwork.com "automation" "n8n" OR "workflow" developer',
+  'site:upwork.com "SaaS" developer',
+  'site:upwork.com "mobile app" React Native OR Flutter',
+  'site:upwork.com "Next.js" OR "React" full stack developer',
+  'site:upwork.com "OpenAI" OR "ChatGPT" integration',
+  'site:upwork.com "Python" "FastAPI" OR "Django" backend',
+  'site:upwork.com "machine learning" OR "AI model" engineer',
 ].join('\n');
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
   const items = await runApifyActor('apify/google-search-scraper', {
-    queries: UPWORK_QUERIES,
+    queries: QUERIES,
     maxPagesPerQuery: 2,
     resultsPerPage: 10,
     languageCode: 'en',
@@ -31,14 +27,11 @@ export async function fetchLeads(): Promise<Record<string, unknown>[]> {
     saveHtmlToKeyValueStore: false,
   });
 
-  const upworkItems = items.filter((item) => {
-    const url = String(
-      (item as Record<string, unknown>).url ??
-      (item as Record<string, unknown>).link ?? ''
-    );
-    return url.includes('upwork.com/jobs') || url.includes('upwork.com/freelance-jobs');
+  const upwork = items.filter((item) => {
+    const url = String((item as Record<string, unknown>).url ?? (item as Record<string, unknown>).link ?? '');
+    return url.includes('upwork.com');
   });
 
-  console.log(`[upwork] ${items.length} Google results → ${upworkItems.length} Upwork jobs`);
-  return upworkItems;
+  console.log(`[upwork] ${items.length} Google results → ${upwork.length} Upwork pages`);
+  return upwork;
 }
