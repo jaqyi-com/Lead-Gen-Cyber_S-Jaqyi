@@ -1,26 +1,23 @@
 import { runApifyActor, buildDatedQueries } from './apifyClient';
 
 /**
- * LinkedIn-PUBLIC — decision-maker posts describing projects they need built.
- * Uses tbs=qdr:d2. Excludes [FOR HIRE] freelancers. Targets /posts/ only.
+ * LinkedIn-PUBLIC — decision-maker posts looking for development partners.
+ * Targets posts asking for custom software development, custom software agencies,
+ * custom builders, development studios, dev shops, or vendor recommendations.
+ * Excludes [FOR HIRE] freelancers. Targets /posts/ only.
  *
  * ⚠️ COMPLIANCE: Never authenticates against LinkedIn. Content already indexed by Google.
  */
 
 const QUERIES = [
-  // AI & Agents project requirement
-  'site:linkedin.com/posts "looking to build" "AI agent" OR "AI chatbot" OR "LLM" -"for hire"',
-  'site:linkedin.com/posts "need" "AI automation" OR "n8n automation" developer project -"for hire"',
-  'site:linkedin.com/posts "looking for" "custom AI" OR "RAG" OR "OpenAI" integration project -"for hire"',
-  // SaaS / Platform build
-  'site:linkedin.com/posts "need to build" "SaaS" OR "CRM" OR "platform" developer -"for hire"',
-  'site:linkedin.com/posts "looking for" "full stack developer" "build" "web app" OR "SaaS" -"for hire"',
-  // Mobile apps
-  'site:linkedin.com/posts "need" "React Native" OR "Flutter" "app" build developer -"for hire"',
-  // Automation / integration
-  'site:linkedin.com/posts "need developer" "automation" OR "API integration" project -"for hire"',
-  // High value — technical co-founder or CTO type posts
-  'site:linkedin.com/posts "technical co-founder" OR "CTO" "looking to build" startup project',
+  'site:linkedin.com/posts "looking for a development agency" OR "recommend a dev shop" OR "dev shop recommendation" -"for hire"',
+  'site:linkedin.com/posts "looking for custom software development" OR "software development company" -"for hire"',
+  'site:linkedin.com/posts "need a team to build" OR "looking for an agency to build" -"for hire"',
+  'site:linkedin.com/posts "recommend an agency" SaaS OR MVP OR app OR platform -"for hire"',
+  'site:linkedin.com/posts "custom software development" "recommendation" OR "recommend" -"for hire"',
+  'site:linkedin.com/posts "looking to hire an agency" AI OR automation OR software -"for hire"',
+  'site:linkedin.com/posts "need a developer shop" OR "need a dev studio" build -"for hire"',
+  'site:linkedin.com/posts "technical partner" OR "development partner" looking to build -"for hire"',
 ];
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {

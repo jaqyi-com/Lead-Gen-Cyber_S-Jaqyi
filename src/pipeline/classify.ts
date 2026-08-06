@@ -72,8 +72,9 @@ SCORE BASED ON PROJECT QUALITY:
 STRICT RULES:
 - If title contains "[FOR HIRE]" → always score 1, category "none"
 - If it's someone OFFERING services not REQUESTING them → score 1, category "none"
+- If it is a corporate job advertisement or recruitment post for a full-time employee (e.g., "looking for full-time developer to join our team", "salary $120k/year", "wages", "benefits") → always score 1, category "none"
 - If it's an article, tutorial, or opinion piece → score 1, category "none"  
-- Only score 3+ if a real entity is LOOKING TO HIRE someone to BUILD something for them
+- Only score 3+ if a real entity is LOOKING to hire an agency, contractor, freelancer, or studio to BUILD a specific project/product (e.g., custom website, SaaS MVP, n8n automation, AI chatbot)
 
 Return JSON only (no markdown, no explanation):
 {

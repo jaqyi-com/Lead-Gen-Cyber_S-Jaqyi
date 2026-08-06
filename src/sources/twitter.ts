@@ -1,18 +1,17 @@
 import { runApifyActor, buildDatedQueries } from './apifyClient';
 
 /**
- * Twitter/X — decision makers posting project requirements.
+ * Twitter/X — founders and decision makers looking for dev agencies/partners.
  * Uses tbs=qdr:d2 for strictly recent results.
  * Targets /status/ URLs (individual tweets) only.
  */
 
 const QUERIES = [
-  // Project requirements with budget signals
-  'site:twitter.com "need to build" "AI agent" OR "AI system" budget -"for hire"',
-  'site:twitter.com "looking for" "AI developer" OR "AI engineer" "build" budget',
-  'site:twitter.com "need" "automation" OR "n8n" developer "project" -"for hire"',
-  'site:twitter.com "hiring" "full stack" OR "Next.js" "build" "SaaS" OR "platform"',
-  'site:x.com "looking to build" "AI" OR "automation" OR "SaaS" developer budget',
+  'site:twitter.com "looking for" dev agency OR dev shop OR software studio -"for hire"',
+  'site:twitter.com "agency to build" SaaS OR app OR MVP -"for hire"',
+  'site:twitter.com "recommend" "development agency" OR "dev shop" OR "custom software company" -"for hire"',
+  'site:x.com "looking for" dev agency OR dev shop OR software studio -"for hire"',
+  'site:x.com "agency to build" SaaS OR app OR MVP -"for hire"',
 ];
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
