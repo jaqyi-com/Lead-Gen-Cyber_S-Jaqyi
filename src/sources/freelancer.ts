@@ -1,19 +1,19 @@
 import { runApifyActor } from './apifyClient';
 
 /**
- * Fetches Freelancer.com job POSTINGS via Google Search.
- * Note: Removed strict /projects URL filter — Google may return other URL formats.
+ * Finds buyers on Freelancer via Google Search.
+ * Targets SPECIFIC PROJECT PAGES (freelancer.com/projects/ID) not category listing pages.
+ * Uses "inurl:projects" to find individual project posts from buyers.
  */
 
 const QUERIES = [
-  'site:freelancer.com "need" "AI developer" OR "AI agent"',
-  'site:freelancer.com "automation" "n8n" developer project',
-  'site:freelancer.com "web app" "full stack" developer project',
-  'site:freelancer.com "SaaS" developer project budget',
-  'site:freelancer.com "mobile app" developer React Native',
-  'site:freelancer.com "OpenAI" OR "ChatGPT" API integration project',
-  'site:freelancer.com "chatbot" AI development project',
-  'site:freelancer.com "Node.js" "Python" backend project',
+  'inurl:freelancer.com/projects "AI agent" OR "AI automation" budget',
+  'inurl:freelancer.com/projects "n8n" OR "workflow automation"',
+  'inurl:freelancer.com/projects "SaaS" OR "web app" developer',
+  'inurl:freelancer.com/projects "Next.js" OR "React" full stack',
+  'inurl:freelancer.com/projects "OpenAI" OR "ChatGPT" OR "GPT-4"',
+  'inurl:freelancer.com/projects "mobile app" React Native OR Flutter',
+  'inurl:freelancer.com/projects "Python" automation OR scraper',
 ].join('\n');
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
@@ -27,11 +27,12 @@ export async function fetchLeads(): Promise<Record<string, unknown>[]> {
     saveHtmlToKeyValueStore: false,
   });
 
-  const fl = items.filter((item) => {
-    const url = String((item as Record<string, unknown>).url ?? (item as Record<string, unknown>).link ?? '');
-    return url.includes('freelancer.com');
+  const filtered = items.filter((item) => {
+    const url = String((item as Record<string, unknown>).url ?? '');
+    // Only individual project pages, not category listing pages
+    return url.includes('freelancer.com/projects/') && /\/\d+/.test(url);
   });
 
-  console.log(`[freelancer] ${items.length} Google results → ${fl.length} Freelancer pages`);
-  return fl;
+  console.log(`[freelancer] ${items.length} results → ${filtered.length} individual project pages`);
+  return filtered;
 }

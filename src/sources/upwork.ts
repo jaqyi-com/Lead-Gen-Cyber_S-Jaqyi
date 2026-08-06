@@ -1,19 +1,18 @@
 import { runApifyActor } from './apifyClient';
 
 /**
- * Fetches Upwork job postings via Google Search.
- * Note: Relaxed URL filter — Google may index various upwork.com URL formats.
+ * Finds buyers on Upwork via Google Search.
+ * Targets SPECIFIC JOB POSTS (upwork.com/jobs/ID) not category listing pages.
  */
 
 const QUERIES = [
-  'site:upwork.com "AI agent" developer',
-  'site:upwork.com "automation" "n8n" OR "workflow" developer',
-  'site:upwork.com "SaaS" developer',
-  'site:upwork.com "mobile app" React Native OR Flutter',
-  'site:upwork.com "Next.js" OR "React" full stack developer',
-  'site:upwork.com "OpenAI" OR "ChatGPT" integration',
-  'site:upwork.com "Python" "FastAPI" OR "Django" backend',
-  'site:upwork.com "machine learning" OR "AI model" engineer',
+  'inurl:upwork.com/jobs "AI agent" OR "AI automation" developer',
+  'inurl:upwork.com/jobs "n8n" OR "workflow automation" developer',
+  'inurl:upwork.com/jobs "SaaS" product developer',
+  'inurl:upwork.com/jobs "Next.js" OR "React" full stack',
+  'inurl:upwork.com/jobs "OpenAI" OR "ChatGPT" integration',
+  'inurl:upwork.com/jobs "mobile app" React Native OR Flutter',
+  'inurl:upwork.com/jobs "machine learning" OR "LLM" engineer',
 ].join('\n');
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
@@ -27,11 +26,12 @@ export async function fetchLeads(): Promise<Record<string, unknown>[]> {
     saveHtmlToKeyValueStore: false,
   });
 
-  const upwork = items.filter((item) => {
-    const url = String((item as Record<string, unknown>).url ?? (item as Record<string, unknown>).link ?? '');
-    return url.includes('upwork.com');
+  const filtered = items.filter((item) => {
+    const url = String((item as Record<string, unknown>).url ?? '');
+    // Individual Upwork job posts have ~_V2/ pattern or /jobs/ with slug
+    return url.includes('upwork.com/jobs/') || url.includes('upwork.com/freelance-jobs/');
   });
 
-  console.log(`[upwork] ${items.length} Google results → ${upwork.length} Upwork pages`);
-  return upwork;
+  console.log(`[upwork] ${items.length} results → ${filtered.length} individual job posts`);
+  return filtered;
 }

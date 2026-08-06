@@ -1,24 +1,23 @@
 import { runApifyActor } from './apifyClient';
 
 /**
- * LinkedIn-PUBLIC source — uses Google Search actor to surface
- * publicly-indexed LinkedIn posts with buying intent.
+ * LinkedIn-PUBLIC source — uses Google Search to find LinkedIn posts with buying intent.
+ * Targets linkedin.com/posts/ and linkedin.com/pulse/ individual posts only.
  *
  * ⚠️ COMPLIANCE: Never authenticates against LinkedIn directly.
  * Only surfaces content already indexed by Google.
- *
- * Actor: apify/google-search-scraper — verified working ✅
  */
 
 const LINKEDIN_QUERIES = [
-  'site:linkedin.com/posts "looking for" "AI agent developer"',
-  'site:linkedin.com/posts "looking for" "automation developer"',
-  'site:linkedin.com/posts "hiring" "software developer" AI',
-  'site:linkedin.com/posts "need a developer" SaaS',
-  'site:linkedin.com/posts "looking for" "mobile app developer"',
-  'site:linkedin.com/posts "looking for" "full stack developer"',
-  'site:linkedin.com/posts "build" "AI chatbot" hire',
-  'site:linkedin.com/posts "developer needed" "web app"',
+  'site:linkedin.com/posts "looking for" "AI developer" OR "AI agent developer"',
+  'site:linkedin.com/posts "looking to hire" "automation" OR "n8n" developer',
+  'site:linkedin.com/posts "hiring" "full stack" OR "Next.js" developer',
+  'site:linkedin.com/posts "need a developer" SaaS OR "web app"',
+  'site:linkedin.com/posts "looking for" "mobile app developer" React Native',
+  'site:linkedin.com/posts "build" "AI chatbot" hire budget',
+  'site:linkedin.com/posts "developer needed" software OR "web application"',
+  'site:linkedin.com/posts "CTO" OR "technical co-founder" "looking for" startup',
+  'site:linkedin.com/pulse "hire" "AI developer" OR "automation developer" 2026',
 ].join('\n');
 
 export async function fetchLeads(): Promise<Record<string, unknown>[]> {
@@ -32,12 +31,16 @@ export async function fetchLeads(): Promise<Record<string, unknown>[]> {
     saveHtmlToKeyValueStore: false,
   });
 
-  // Filter to only LinkedIn results from the Google search
   const linked = items.filter((item) => {
-    const url = String((item as Record<string, unknown>).url ?? (item as Record<string, unknown>).link ?? '');
-    return url.includes('linkedin.com');
+    const url = String((item as Record<string, unknown>).url ?? '');
+    // Individual posts only — has activity ID or /posts/ with long slug
+    return (
+      url.includes('linkedin.com/posts/') ||
+      url.includes('linkedin.com/pulse/') ||
+      url.includes('linkedin.com/feed/update/')
+    );
   });
 
-  console.log(`[linkedin-public] Fetched ${items.length} search results, ${linked.length} LinkedIn`);
+  console.log(`[linkedin-public] ${items.length} Google results → ${linked.length} LinkedIn posts`);
   return linked;
 }

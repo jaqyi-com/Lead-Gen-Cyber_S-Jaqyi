@@ -3,8 +3,8 @@ import { RawLead } from './normalize';
 
 // ─── OpenRouter config ────────────────────────────────────────────────────────
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
-const MODEL = process.env.OPENROUTER_MODEL ?? 'anthropic/claude-3.5-sonnet';
-const MIN_SCORE = parseInt(process.env.MIN_INTENT_SCORE ?? '3', 10);
+const MODEL = process.env.OPENROUTER_MODEL ?? 'openai/gpt-4o-mini';
+const MIN_SCORE = parseInt(process.env.MIN_INTENT_SCORE ?? '2', 10);
 
 export type LeadCategory =
   | 'IT & Software'
@@ -41,18 +41,36 @@ function truncate(text: string, maxChars = 800): string {
 }
 
 function buildPrompt(lead: RawLead): string {
-  return `You are screening leads for JAQYI, a studio offering: IT & Software development, AI & AI Agents, Automation (n8n/workflow), SaaS Products, Mobile & Web Apps.
+  return `You are a lead qualification expert for JAQYI, a dev studio offering:
+- IT & Software development (React, Node.js, TypeScript, Python)
+- AI & AI Agents (OpenAI, Claude, LangChain, RAG systems)
+- Automation (n8n, workflows, API integrations)
+- SaaS Products (full-stack SaaS, CRM, platforms)
+- Mobile & Web Apps (React Native, Flutter, Next.js)
 
-Given this post/listing:
+Analyze this post and score it for BUYING INTENT — meaning: is this a person/company ACTIVELY LOOKING TO HIRE a developer?
+
 Title: ${lead.title}
 Description: ${truncate(lead.description)}
 Source: ${lead.source}
+URL: ${lead.url}
 
-Return JSON only (no markdown, no explanation, ONLY the raw JSON object):
+Scoring guide:
+5 = Explicit hire request with budget/timeline ("[HIRING] need React dev, $5k budget")
+4 = Clear hiring intent, specific tech mentioned ("Looking for AI agent developer")
+3 = Probable hiring intent, somewhat specific ("Need help with n8n automation")
+2 = Possible hiring intent, vague ("Anyone know a good dev?")
+1 = No hiring intent (job seeker, article, discussion, profile page)
+
+IMPORTANT: Job board LISTING pages ("Node.js Jobs for August 2026") = score 1, category "none".
+Freelancer/Upwork PROFILE pages = score 1, category "none".
+Actual PROJECT POSTS or HIRING POSTS = score 3-5.
+
+Return JSON only (no markdown):
 {
   "category": one of ["IT & Software","AI & AI Agents","Automation","SaaS Products","Mobile & Web Apps","none"],
-  "buyingIntentScore": 1-5 (5 = explicit ready-to-hire with budget mentioned, 1 = casual mention/no real intent),
-  "reasoning": "one sentence"
+  "buyingIntentScore": 1-5,
+  "reasoning": "one sentence explaining why"
 }`;
 }
 
