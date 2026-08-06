@@ -2,71 +2,111 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const nav = [
-  { href: '/',       label: 'Overview',   icon: '📊' },
-  { href: '/leads',  label: 'All Leads',  icon: '🎯' },
+const NAV = [
+  {
+    href: '/',
+    label: 'Overview',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/leads',
+    label: 'All Leads',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/test',
+    label: 'API Health',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    ),
+  },
+];
+
+const SOURCES = [
+  { icon: '💼', label: 'Freelancer', color: '#7c3aed' },
+  { icon: '🔺', label: 'Upwork',     color: '#06b6d4' },
+  { icon: '🤖', label: 'Reddit',     color: '#f59e0b' },
+  { icon: '𝕏',  label: 'Twitter/X', color: '#e2e8f0' },
+  { icon: '🔗', label: 'LinkedIn',   color: '#10b981' },
 ];
 
 export default function Sidebar() {
   const path = usePathname();
-
   return (
-    <aside className="fixed top-0 left-0 h-full w-64 bg-[#0d0d15] border-r border-white/[0.06] flex flex-col z-50">
+    <aside style={{
+      position: 'fixed', top: 0, left: 0, height: '100vh', width: '220px',
+      background: 'linear-gradient(180deg, #0b0b16 0%, #08080e 100%)',
+      borderRight: '1px solid rgba(255,255,255,0.06)',
+      display: 'flex', flexDirection: 'column', zIndex: 50,
+    }}>
       {/* Logo */}
-      <div className="p-6 border-b border-white/[0.06]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center text-sm font-bold">J</div>
+      <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: 'linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 800, fontSize: 14, color: '#fff',
+            boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
+          }}>J</div>
           <div>
-            <p className="font-bold text-white text-sm tracking-wide">JAQYI</p>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest">Lead Pipeline</p>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#f1f0ff', letterSpacing: '0.02em' }}>JAQYI</div>
+            <div style={{ fontSize: 10, color: 'rgba(241,240,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Lead Pipeline</div>
           </div>
         </div>
       </div>
 
       {/* Live indicator */}
-      <div className="px-6 py-3 border-b border-white/[0.06]">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
-          <span className="text-xs text-white/40">Pipeline active</span>
+      <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="pulse-live" style={{
+            width: 7, height: 7, borderRadius: '50%', background: '#10b981',
+          }}/>
+          <span style={{ fontSize: 11, color: 'rgba(241,240,255,0.4)' }}>Pipeline active · 9am daily</span>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-4 space-y-1">
-        {nav.map((item) => {
-          const active = path === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                active
-                  ? 'bg-violet-600/20 text-violet-300 border border-violet-500/30'
-                  : 'text-white/50 hover:text-white hover:bg-white/[0.04]'
-              }`}
-            >
-              <span className="text-base">{item.icon}</span>
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ fontSize: 10, color: 'rgba(241,240,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 6px 6px' }}>Menu</div>
+        {NAV.map((item) => (
+          <Link key={item.href} href={item.href} className={`sidebar-link ${path === item.href ? 'active' : ''}`}>
+            {item.icon}
+            <span>{item.label}</span>
+          </Link>
+        ))}
       </nav>
 
       {/* Sources legend */}
-      <div className="p-4 border-t border-white/[0.06]">
-        <p className="text-[10px] uppercase tracking-widest text-white/30 mb-3 px-1">Sources</p>
-        {[
-          ['💼', 'Freelancer'],
-          ['🔺', 'Upwork'],
-          ['🤖', 'Reddit'],
-          ['𝕏', 'Twitter/X'],
-          ['🔗', 'LinkedIn'],
-        ].map(([icon, label]) => (
-          <div key={label} className="flex items-center gap-2 px-1 py-1">
-            <span className="text-xs">{icon}</span>
-            <span className="text-xs text-white/40">{label}</span>
+      <div style={{ padding: '12px 10px 16px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ fontSize: 10, color: 'rgba(241,240,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 6px 8px' }}>Sources</div>
+        {SOURCES.map(({ icon, label, color }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px' }}>
+            <span style={{ fontSize: 12 }}>{icon}</span>
+            <span style={{ fontSize: 12, color: 'rgba(241,240,255,0.4)' }}>{label}</span>
+            <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: color, opacity: 0.7 }}/>
           </div>
         ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        padding: '10px 16px', borderTop: '1px solid rgba(255,255,255,0.04)',
+        fontSize: 10, color: 'rgba(241,240,255,0.2)', textAlign: 'center'
+      }}>
+        JAQYI © 2026 · jaqyi.com
       </div>
     </aside>
   );
