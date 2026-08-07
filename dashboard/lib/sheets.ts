@@ -1,18 +1,25 @@
 import { google } from 'googleapis';
 import { Lead } from './types';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
 const TAB_NAME = process.env.GOOGLE_SHEET_TAB_NAME ?? 'Sheet1';
 
 function getCredentials(): Record<string, unknown> {
-  // Vercel: inline JSON via env var (set GOOGLE_SHEETS_CREDENTIALS_JSON)
+  // 1. Vercel: inline JSON via env var
   const inline = process.env.GOOGLE_SHEETS_CREDENTIALS_JSON;
   if (inline) {
     return JSON.parse(inline) as Record<string, unknown>;
   }
+  // 2. Local fallback to environment path or default file location
+  const filePath = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH || path.resolve(process.cwd(), '../google-credentials.json');
+  if (fs.existsSync(filePath)) {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as Record<string, unknown>;
+  }
+
   throw new Error(
-    'GOOGLE_SHEETS_CREDENTIALS_JSON env var is required. ' +
-    'Paste the service account JSON as a single-line string.'
+    'Neither GOOGLE_SHEETS_CREDENTIALS_JSON nor GOOGLE_SHEETS_CREDENTIALS_PATH (or local file) was found.'
   );
 }
 

@@ -50,6 +50,7 @@ export default function SettingsPage() {
   const [activeCategory, setActiveCategory] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [selectedCronPreset, setSelectedCronPreset] = useState('');
+  const [logs, setLogs] = useState('');
 
   const fetchConfig = useCallback(async () => {
     try {
@@ -70,12 +71,26 @@ export default function SettingsPage() {
     } catch { /* */ }
   }, []);
 
+  const fetchLogs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/pipeline/logs');
+      if (res.ok) {
+        const data = await res.json() as { logs?: string };
+        setLogs(data.logs ?? '');
+      }
+    } catch { /* */ }
+  }, []);
+
   useEffect(() => {
     fetchConfig();
     fetchRunStatus();
-    const t = setInterval(fetchRunStatus, 5000);
+    fetchLogs();
+    const t = setInterval(() => {
+      fetchRunStatus();
+      fetchLogs();
+    }, 5000);
     return () => clearInterval(t);
-  }, [fetchConfig, fetchRunStatus]);
+  }, [fetchConfig, fetchRunStatus, fetchLogs]);
 
   async function saveConfig() {
     if (!config) return;
@@ -374,6 +389,31 @@ export default function SettingsPage() {
           />
           <button className="btn-ghost" onClick={addCategory} style={{ padding: '10px 18px' }}>+ Add Category</button>
         </div>
+      </div>
+
+      {/* ── Pipeline Logs ────────────────────────────────────────── */}
+      <div className="card fade-up-2" style={{ padding: '24px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f1f0ff', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>📁</span> Live Pipeline Logs
+          </h2>
+          <button className="btn-ghost" onClick={fetchLogs} style={{ padding: '4px 10px', fontSize: 11 }}>↻ Refresh Logs</button>
+        </div>
+        <pre style={{
+          background: '#09090f',
+          color: '#34d399',
+          fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+          fontSize: 12,
+          padding: '16px',
+          borderRadius: 8,
+          border: '1px solid rgba(255,255,255,0.06)',
+          height: 250,
+          overflowY: 'auto',
+          whiteSpace: 'pre-wrap',
+          margin: 0,
+        }}>
+          {logs || 'No pipeline execution logs recorded in temporary storage yet.'}
+        </pre>
       </div>
 
       {/* ── Save ───────────────────────────────────────────────── */}
