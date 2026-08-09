@@ -24,6 +24,11 @@
     "cron": "0 6 * * *",
     "label": "Daily at 6:00 AM"
   },
+  "score_alert_threshold": 55,
+  "min_budget_usd": 500,
+  "reps": [
+    { "name": "Akshat", "email": "akshat@jaqyi.com" }
+  ],
   "lastRun": null,
   "lastRunStatus": null
 }

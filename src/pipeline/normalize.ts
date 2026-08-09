@@ -4,6 +4,10 @@
  * Maps each source's raw Apify actor output to the canonical RawLead shape.
  * ALL sources now use apify/google-search-scraper, so fields are consistent.
  * Source-specific normalizers add domain-level URL validation only.
+ *
+ * Spec §2.1 normalized lead object fields added:
+ *   - budget_min, budget_max, currency (structured from budget string)
+ *   - client_profile_url (platform profile URL when available)
  */
 
 export type SourceName =
@@ -18,10 +22,17 @@ export interface RawLead {
   title: string;
   description: string;
   url: string;
+  // Legacy single-string budget (kept for backward compat with digest/sheets)
   budget?: string;
+  // Spec §2.1 structured budget fields
+  budget_min?: number | null;
+  budget_max?: number | null;
+  currency?: string;
   postedAt: string;
   authorName?: string;
   authorHandle?: string;
+  // Spec §2.1 client fields
+  client_profile_url?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,6 +44,24 @@ function str(v: unknown): string {
 function strOpt(v: unknown): string | undefined {
   const s = str(v);
   return s.length > 0 ? s : undefined;
+}
+
+/**
+ * Parse a budget string into structured min/max/currency fields.
+ * Handles: "$500", "$1,500–$5,000", "$5k", "5000 USD", "$10/hr"
+ */
+function parseBudget(raw: string): { budget_min: number | null; budget_max: number | null; currency: string } {
+  const currency = /\b(GBP|EUR|AUD|CAD|INR)\b/i.exec(raw)?.[1]?.toUpperCase() ?? 'USD';
+
+  // Extract all numeric values (handles comma-separated thousands and 'k' suffix)
+  const amounts = [...raw.matchAll(/\$?([\d,]+\.?\d*)\s*(k|K)?/g)].map((m) => {
+    const num = parseFloat(m[1].replace(/,/g, ''));
+    return m[2] ? num * 1000 : num;
+  });
+
+  if (amounts.length === 0) return { budget_min: null, budget_max: null, currency };
+  if (amounts.length === 1) return { budget_min: amounts[0], budget_max: amounts[0], currency };
+  return { budget_min: Math.min(...amounts), budget_max: Math.max(...amounts), currency };
 }
 
 /**
@@ -61,17 +90,26 @@ function normalizeGoogleSearchResult(
 
   // Try to extract budget from title or snippet (e.g. "$500", "$50/hr", "$5k")
   const combined = `${title} ${description}`;
-  const budgetMatch = combined.match(/\$[\d,]+(?:\/hr|\/hour|k|K)?/);
+  const budgetMatch = combined.match(/\$[\d,]+(?:–\$[\d,]+)?(?:\/hr|\/hour|k|K)?/);
+  const budgetRaw = budgetMatch ? budgetMatch[0] : strOpt(raw.budget as unknown);
+
+  const { budget_min, budget_max, currency } = budgetRaw
+    ? parseBudget(budgetRaw)
+    : { budget_min: null, budget_max: null, currency: 'USD' };
 
   return {
     source,
     title: title || description.slice(0, 80) || 'Untitled',
     description,
     url,
-    budget: budgetMatch ? budgetMatch[0] : strOpt(raw.budget),
+    budget: budgetRaw,
+    budget_min,
+    budget_max,
+    currency,
     postedAt: str(raw.date ?? raw.publishedDate ?? new Date().toISOString()),
     authorName: strOpt(raw.websiteTitle ?? raw.name ?? raw.author ?? raw.displayLink),
     authorHandle: undefined,
+    client_profile_url: undefined, // Platform profile URLs not available via Google search
   };
 }
 

@@ -10,8 +10,13 @@ import { normalizeLeads, RawLead, SourceName } from './pipeline/normalize';
 import { dedupeLeads } from './pipeline/dedupe';
 import { classifyLeads } from './pipeline/classify';
 import { enrichLeads } from './pipeline/enrich';
+import { runVerificationStage } from './pipeline/verify';
+import { runScoringStage } from './pipeline/score';
+import { runAssignmentStage } from './pipeline/assign';
 import { appendLeadsToSheet } from './storage/sheets';
+import { seedRepsFromConfig } from './storage/db';
 import { sendDigest } from './delivery/digest';
+import { sendSlackNotifications } from './delivery/slack';
 import { updateLastRun } from './config/keywords';
 import { isFresh, FRESHNESS_DAYS, afterDateString } from './utils/freshness';
 
@@ -31,8 +36,14 @@ const SOURCES: Array<{
 // ─── Orchestrator ─────────────────────────────────────────────────────────────
 
 /**
- * Full pipeline run:
- *   sources → normalize → dedupe → classify → enrich → store → digest
+ * Full pipeline run (pull-based, spec §3):
+ *
+ *   sources → normalize → dedupe(DB) → classify → enrich
+ *           → verify → score → assign → slack → sheet → digest
+ *
+ * Each stage after enrich is pull-based — it reads from the DB by status
+ * and writes to the next status. This means each stage can fail and retry
+ * independently without re-running the entire pipeline.
  *
  * Each source is fault-isolated: failures are logged and skipped without
  * crashing the entire run.
@@ -45,6 +56,9 @@ export async function run(): Promise<void> {
   console.log(`  ${new Date().toISOString()}`);
   console.log(`  Freshness window: last ${FRESHNESS_DAYS} days (after:${afterDateString()})`);
   console.log('========================================\n');
+
+  // Seed reps table from pipeline-config.json (idempotent)
+  seedRepsFromConfig();
 
   // ── Stage 1: Fetch (per-source fault isolation) ───────────────────────────
   const allRaw: RawLead[] = [];
@@ -70,68 +84,87 @@ export async function run(): Promise<void> {
     console.log(`[run] ▶ Freshness filter: kept ${fresh0.length}/${allRaw.length} (dropped ${allRaw.length - fresh0.length} stale leads)`);
   }
 
-  if (fresh0.length === 0) {
-    console.log('[run] No fresh leads fetched. Exiting.');
-    updateLastRun('failed', 'No fresh leads from any source');
-    return;
-  }
-
   if (allRaw.length === 0) {
-    console.log('[run] No leads fetched. Exiting.');
-    updateLastRun('failed', 'No leads fetched from any source');
-    return;
+    console.log('[run] No leads fetched. Running downstream stages on any queued DB leads…');
+    // Don't exit — downstream stages may still have queued work
   }
 
-  // ── Stage 2: Dedupe (before enrichment to protect Apollo credits) ─────────
-  console.log('\n[run] ▶ Deduplicating…');
-  const fresh = dedupeLeads(fresh0);
-  console.log(`[run] ${fresh.length} fresh leads after dedup (${fresh0.length - fresh.length} dupes removed)`);
-
-  if (fresh.length === 0) {
-    console.log('[run] All leads already seen. Nothing new to process.');
-    updateLastRun('success', 'No new leads — all already processed');
-    return;
+  if (fresh0.length === 0 && allRaw.length > 0) {
+    console.log('[run] No fresh leads. Running downstream stages on any queued DB leads…');
   }
 
-  // ── Stage 3: Classify via Claude ─────────────────────────────────────────
-  console.log('\n[run] ▶ Classifying with Claude…');
-  const classified = await classifyLeads(fresh);
-  console.log(`[run] ${classified.length} leads passed classification`);
+  // ── Stage 2: Dedupe (DB-backed — inserts new leads with status='new') ─────
+  let enriched: Awaited<ReturnType<typeof enrichLeads>> = [];
 
-  if (classified.length === 0) {
-    console.log('[run] No leads passed classification filter. Exiting.');
-    updateLastRun('failed', `0/${fresh.length} leads passed classifier`);
-    return;
+  if (fresh0.length > 0) {
+    console.log('\n[run] ▶ Deduplicating…');
+    const fresh = dedupeLeads(fresh0);
+    console.log(`[run] ${fresh.length} fresh leads after dedup (${fresh0.length - fresh.length} dupes removed)`);
+
+    if (fresh.length > 0) {
+      // ── Stage 3: Classify via Claude (pre-enrichment filter) ───────────
+      console.log('\n[run] ▶ Classifying with Claude…');
+      const classified = await classifyLeads(fresh);
+      console.log(`[run] ${classified.length} leads passed classification`);
+
+      // ── Stage 4: Enrich via Apollo.io (+ Hunter.io fallback) ───────────
+      if (classified.length > 0) {
+        console.log('\n[run] ▶ Enriching with Apollo.io…');
+        enriched = await enrichLeads(classified);
+      } else {
+        console.log('[run] No leads passed classification — skipping enrichment');
+      }
+    } else {
+      console.log('[run] All leads already seen. Running downstream stages on previously queued leads…');
+    }
   }
 
-  // ── Stage 4: Enrich via Apollo.io ────────────────────────────────────────
-  console.log('\n[run] ▶ Enriching with Apollo.io…');
-  const enriched = await enrichLeads(classified);
+  // ── Stage 5: Email Verification (pull-based — reads 'enriched' from DB) ──
+  console.log('\n[run] ▶ Running email verification stage…');
+  await runVerificationStage();
 
-  // ── Stage 5: Store to Google Sheets ──────────────────────────────────────
-  console.log('\n[run] ▶ Appending to Google Sheets…');
-  try {
-    await appendLeadsToSheet(enriched);
-    console.log(`[run] ✓ Wrote ${enriched.length} leads to sheet`);
-  } catch (err) {
-    console.error('[run] ✖ Sheets storage failed:', err);
+  // ── Stage 6: Scoring (pull-based — reads 'verified' from DB) ─────────────
+  console.log('\n[run] ▶ Running scoring stage…');
+  await runScoringStage();
+
+  // ── Stage 7: Assignment (pull-based — reads 'scored' from DB) ────────────
+  console.log('\n[run] ▶ Running assignment stage…');
+  const assignments = await runAssignmentStage();
+
+  // ── Stage 8: Slack notifications for newly assigned leads ────────────────
+  if (assignments.length > 0) {
+    console.log('\n[run] ▶ Sending Slack notifications…');
+    await sendSlackNotifications(assignments);
   }
 
-  // ── Stage 6: Send digest email ────────────────────────────────────────────
-  console.log('\n[run] ▶ Sending digest email…');
-  try {
-    await sendDigest(enriched);
-    console.log('[run] ✓ Digest email sent');
-  } catch (err) {
-    console.error('[run] ✖ Digest delivery failed:', err);
+  // ── Stage 9: Store to Google Sheets ──────────────────────────────────────
+  if (enriched.length > 0) {
+    console.log('\n[run] ▶ Appending to Google Sheets…');
+    try {
+      await appendLeadsToSheet(enriched);
+      console.log(`[run] ✓ Wrote ${enriched.length} leads to sheet`);
+    } catch (err) {
+      console.error('[run] ✖ Sheets storage failed:', err);
+    }
+  }
+
+  // ── Stage 10: Send digest email ───────────────────────────────────────────
+  if (enriched.length > 0) {
+    console.log('\n[run] ▶ Sending digest email…');
+    try {
+      await sendDigest(enriched);
+      console.log('[run] ✓ Digest email sent');
+    } catch (err) {
+      console.error('[run] ✖ Digest delivery failed:', err);
+    }
   }
 
   const elapsed = Math.round((Date.now() - startTime) / 1000);
   console.log('\n========================================');
-  console.log(`  Run complete. ${enriched.length} leads processed in ${elapsed}s`);
+  console.log(`  Run complete. ${enriched.length} new leads + ${assignments.length} assigned in ${elapsed}s`);
   console.log('========================================\n');
 
-  updateLastRun('success', `${enriched.length} leads processed in ${elapsed}s`);
+  updateLastRun('success', `${enriched.length} leads processed, ${assignments.length} assigned in ${elapsed}s`);
 }
 
 // ─── Scheduler mode vs single-run mode ───────────────────────────────────────
