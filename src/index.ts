@@ -1,5 +1,18 @@
 import 'dotenv/config';
 
+// ─── Patch console.error and console.warn to prevent Axios segfaults ──────
+// Axios errors contain massive circular structures including the raw TLSSocket.
+// Printing them in Node.js can cause a Segmentation fault deep in util.inspect
+// or trigger Railway's log rate limit. We patch the logger to only print the message.
+const originalError = console.error;
+console.error = (...args: any[]) => {
+  originalError(...args.map(a => a?.isAxiosError ? `AxiosError: ${a.message} (status: ${a.response?.status})` : a));
+};
+const originalWarn = console.warn;
+console.warn = (...args: any[]) => {
+  originalWarn(...args.map(a => a?.isAxiosError ? `AxiosError: ${a.message} (status: ${a.response?.status})` : a));
+};
+
 import { fetchLeads as fetchFreelancer } from './sources/freelancer';
 import { fetchLeads as fetchUpwork } from './sources/upwork';
 import { fetchLeads as fetchReddit } from './sources/reddit';
@@ -17,7 +30,7 @@ import { appendLeadsToSheet } from './storage/sheets';
 import { seedRepsFromConfig } from './storage/db';
 import { sendDigest } from './delivery/digest';
 import { sendSlackNotifications } from './delivery/slack';
-import { updateLastRun } from './config/keywords';
+import { updateLastRun, updateProgress, clearProgress, getEnabledSources } from './config/keywords';
 import { isFresh, FRESHNESS_DAYS, afterDateString } from './utils/freshness';
 
 // ─── Source registry ──────────────────────────────────────────────────────────
@@ -59,11 +72,18 @@ export async function run(): Promise<void> {
 
   // Seed reps table from pipeline-config.json (idempotent)
   seedRepsFromConfig();
+  updateProgress('Starting pipeline run...', 0, 10);
 
   // ── Stage 1: Fetch (per-source fault isolation) ───────────────────────────
+  updateProgress('Fetching sources...', 1, 10);
+  const enabledSources = getEnabledSources();
   const allRaw: RawLead[] = [];
 
   for (const source of SOURCES) {
+    if (enabledSources[source.name] === false) {
+      console.log(`\n[run] ⏸ Source "${source.name}" disabled in config — skipping`);
+      continue;
+    }
     try {
       console.log(`\n[run] ▶ Fetching source: ${source.name}`);
       const rawItems = await source.fetch();
@@ -97,18 +117,21 @@ export async function run(): Promise<void> {
   let enriched: Awaited<ReturnType<typeof enrichLeads>> = [];
 
   if (fresh0.length > 0) {
+    updateProgress('Deduplicating leads...', 2, 10);
     console.log('\n[run] ▶ Deduplicating…');
     const fresh = dedupeLeads(fresh0);
     console.log(`[run] ${fresh.length} fresh leads after dedup (${fresh0.length - fresh.length} dupes removed)`);
 
     if (fresh.length > 0) {
       // ── Stage 3: Classify via Claude (pre-enrichment filter) ───────────
+      updateProgress('Classifying with Claude...', 3, 10);
       console.log('\n[run] ▶ Classifying with Claude…');
       const classified = await classifyLeads(fresh);
       console.log(`[run] ${classified.length} leads passed classification`);
 
       // ── Stage 4: Enrich via Apollo.io (+ Hunter.io fallback) ───────────
       if (classified.length > 0) {
+        updateProgress('Enriching with Apollo...', 4, 10);
         console.log('\n[run] ▶ Enriching with Apollo.io…');
         enriched = await enrichLeads(classified);
       } else {
@@ -120,25 +143,34 @@ export async function run(): Promise<void> {
   }
 
   // ── Stage 5: Email Verification (pull-based — reads 'enriched' from DB) ──
+  updateProgress('Verifying emails...', 5, 10);
   console.log('\n[run] ▶ Running email verification stage…');
-  await runVerificationStage();
+  try {
+    await runVerificationStage();
+  } catch (err: any) {
+    console.error('[run] ✖ Verification stage error:', err?.message || err);
+  }
 
   // ── Stage 6: Scoring (pull-based — reads 'verified' from DB) ─────────────
+  updateProgress('Scoring leads...', 6, 10);
   console.log('\n[run] ▶ Running scoring stage…');
   await runScoringStage();
 
   // ── Stage 7: Assignment (pull-based — reads 'scored' from DB) ────────────
+  updateProgress('Assigning leads...', 7, 10);
   console.log('\n[run] ▶ Running assignment stage…');
   const assignments = await runAssignmentStage();
 
   // ── Stage 8: Slack notifications for newly assigned leads ────────────────
   if (assignments.length > 0) {
+    updateProgress('Sending Slack notifications...', 8, 10);
     console.log('\n[run] ▶ Sending Slack notifications…');
     await sendSlackNotifications(assignments);
   }
 
   // ── Stage 9: Store to Google Sheets ──────────────────────────────────────
   if (enriched.length > 0) {
+    updateProgress('Writing to Google Sheets...', 9, 10);
     console.log('\n[run] ▶ Appending to Google Sheets…');
     try {
       await appendLeadsToSheet(enriched);
@@ -150,6 +182,7 @@ export async function run(): Promise<void> {
 
   // ── Stage 10: Send digest email ───────────────────────────────────────────
   if (enriched.length > 0) {
+    updateProgress('Sending digest email...', 10, 10);
     console.log('\n[run] ▶ Sending digest email…');
     try {
       await sendDigest(enriched);
@@ -165,6 +198,7 @@ export async function run(): Promise<void> {
   console.log('========================================\n');
 
   updateLastRun('success', `${enriched.length} leads processed, ${assignments.length} assigned in ${elapsed}s`);
+  clearProgress();
 }
 
 // ─── Scheduler mode vs single-run mode ───────────────────────────────────────
@@ -180,8 +214,8 @@ if (IS_SCHEDULE_MODE) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const fs = require('fs');
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const path = require('path');
-  const configPath = path.resolve(__dirname, '../../pipeline-config.json');
+  const { getDataFile } = require('./utils/paths');
+  const configPath = getDataFile('pipeline-config.json');
 
   let cronExpression = '0 6 * * *'; // default: daily 6am
   try {
@@ -206,6 +240,7 @@ if (IS_SCHEDULE_MODE) {
   run().catch((err) => {
     console.error('[run] Unhandled fatal error:', err);
     updateLastRun('failed', String(err));
+    clearProgress();
     process.exit(1);
   });
 }

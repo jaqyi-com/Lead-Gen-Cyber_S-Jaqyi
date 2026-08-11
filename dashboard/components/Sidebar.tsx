@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from './ThemeProvider';
 
 const NAV = [
   {
@@ -55,15 +56,19 @@ const SOURCES = [
 
 export default function Sidebar() {
   const path = usePathname();
+  const { theme, toggle } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
     <aside style={{
       position: 'fixed', top: 0, left: 0, height: '100vh', width: '220px',
-      background: 'linear-gradient(180deg, #0b0b16 0%, #08080e 100%)',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
+      background: 'var(--sidebar-bg)',
+      borderRight: '1px solid var(--sidebar-border)',
       display: 'flex', flexDirection: 'column', zIndex: 50,
+      transition: 'background 0.3s, border-color 0.3s',
     }}>
       {/* Logo */}
-      <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 34, height: 34, borderRadius: 10,
@@ -73,25 +78,25 @@ export default function Sidebar() {
             boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
           }}>J</div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#f1f0ff', letterSpacing: '0.02em' }}>JAQYI</div>
-            <div style={{ fontSize: 10, color: 'rgba(241,240,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Lead Pipeline</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', letterSpacing: '0.02em' }}>JAQYI</div>
+            <div style={{ fontSize: 10, color: 'var(--subtle)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Lead Pipeline</div>
           </div>
         </div>
       </div>
 
       {/* Live indicator */}
-      <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div className="pulse-live" style={{
             width: 7, height: 7, borderRadius: '50%', background: '#10b981',
           }}/>
-          <span style={{ fontSize: 11, color: 'rgba(241,240,255,0.4)' }}>Pipeline active · 9am daily</span>
+          <span style={{ fontSize: 11, color: 'var(--muted)' }}>Pipeline active · 9am daily</span>
         </div>
       </div>
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <div style={{ fontSize: 10, color: 'rgba(241,240,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 6px 6px' }}>Menu</div>
+        <div style={{ fontSize: 10, color: 'var(--subtle)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 6px 6px' }}>Menu</div>
         {NAV.map((item) => (
           <Link key={item.href} href={item.href} className={`sidebar-link ${path === item.href ? 'active' : ''}`}>
             {item.icon}
@@ -101,24 +106,64 @@ export default function Sidebar() {
       </nav>
 
       {/* Sources legend */}
-      <div style={{ padding: '12px 10px 16px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <div style={{ fontSize: 10, color: 'rgba(241,240,255,0.25)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 6px 8px' }}>Sources</div>
+      <div style={{ padding: '12px 10px 16px', borderTop: '1px solid var(--border)' }}>
+        <div style={{ fontSize: 10, color: 'var(--subtle)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 6px 8px' }}>Sources</div>
         {SOURCES.map(({ icon, label, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px' }}>
             <span style={{ fontSize: 12 }}>{icon}</span>
-            <span style={{ fontSize: 12, color: 'rgba(241,240,255,0.4)' }}>{label}</span>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>{label}</span>
             <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: color, opacity: 0.7 }}/>
           </div>
         ))}
       </div>
 
-      {/* Footer */}
-      <div style={{
-        padding: '10px 16px', borderTop: '1px solid rgba(255,255,255,0.04)',
-        fontSize: 10, color: 'rgba(241,240,255,0.2)', textAlign: 'center'
-      }}>
-        JAQYI © 2026 · jaqyi.com
+      {/* Theme toggle + Footer */}
+      <div style={{ padding: '10px 16px 16px', borderTop: '1px solid var(--border)' }}>
+        {/* Toggle button */}
+        <button
+          onClick={toggle}
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 10px',
+            borderRadius: 10,
+            cursor: 'pointer',
+            background: 'var(--ghost-bg)',
+            border: '1px solid var(--ghost-border)',
+            color: 'var(--muted)',
+            fontSize: 12,
+            fontWeight: 500,
+            marginBottom: 10,
+            transition: 'all 0.2s',
+            fontFamily: 'inherit',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>{isDark ? '☀️' : '🌙'}</span>
+          <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+          <div style={{
+            marginLeft: 'auto',
+            width: 30, height: 16, borderRadius: 999,
+            background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(124,58,237,0.7)',
+            position: 'relative', transition: 'background 0.2s',
+          }}>
+            <div style={{
+              width: 12, height: 12, borderRadius: '50%', background: '#fff',
+              position: 'absolute', top: 2,
+              left: isDark ? 2 : 16,
+              transition: 'left 0.2s',
+            }} />
+          </div>
+        </button>
+
+        <div style={{ fontSize: 10, color: 'var(--subtle)', textAlign: 'center' }}>
+          JAQYI © 2026 · jaqyi.com
+        </div>
       </div>
     </aside>
   );
 }
+
+

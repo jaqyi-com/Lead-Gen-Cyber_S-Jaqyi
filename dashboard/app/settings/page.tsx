@@ -6,6 +6,7 @@ interface Config {
   keywords: string[];
   categories: Record<string, string[]>;
   schedule: { enabled: boolean; cron: string; label: string };
+  sources?: Record<string, boolean>;
   lastRun: string | null;
   lastRunStatus: string | null;
 }
@@ -15,6 +16,7 @@ interface RunStatus {
   lastRunStatus: string | null;
   isRunning: boolean;
   pid?: number;
+  progress?: { step: string; current: number; total: number } | null;
 }
 
 const CRON_PRESETS = [
@@ -211,6 +213,84 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* ── 10-Step Pipeline Progress Stepper ────────────────────────── */}
+        <div style={{ marginBottom: 24, marginTop: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#f1f0ff', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>📊</span> Pipeline Execution Steps
+            </span>
+            {runStatus.progress ? (
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#a855f7', background: 'rgba(168,85,247,0.12)', padding: '2px 10px', borderRadius: 20, border: '1px solid rgba(168,85,247,0.3)' }}>
+                Step {runStatus.progress.current} of {runStatus.progress.total}: {runStatus.progress.step}
+              </span>
+            ) : (
+              <span style={{ fontSize: 12, color: 'rgba(241,240,255,0.4)' }}>10 Stages Configured</span>
+            )}
+          </div>
+
+          {/* Master Progress Bar */}
+          <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginBottom: 16 }}>
+            <div style={{
+              height: '100%',
+              width: runStatus.progress ? `${(runStatus.progress.current / runStatus.progress.total) * 100}%` : '0%',
+              background: 'linear-gradient(90deg, #7c3aed, #a855f7, #ec4899)',
+              transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: '0 0 12px rgba(168, 85, 247, 0.6)'
+            }} />
+          </div>
+
+          {/* Stepper Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+            {[
+              { id: 1, name: 'Fetch Sources', desc: 'Upwork, Freelancer, Reddit, Twitter, LinkedIn' },
+              { id: 2, name: 'Deduplicate', desc: 'Filter existing leads by hash' },
+              { id: 3, name: 'AI Classify', desc: 'Filter intent with Claude API' },
+              { id: 4, name: 'Enrich', desc: 'Apollo & Hunter contact lookup' },
+              { id: 5, name: 'Verify Email', desc: 'ZeroBounce deliverability check' },
+              { id: 6, name: 'Score Lead', desc: 'Calculate intent score' },
+              { id: 7, name: 'Assign Rep', desc: 'Round-robin rep assignment' },
+              { id: 8, name: 'Slack Alert', desc: 'Send notification to sales team' },
+              { id: 9, name: 'Google Sheets', desc: 'Sync leads to master sheet' },
+              { id: 10, name: 'Email Digest', desc: 'Send summary digest email' },
+            ].map((s) => {
+              const current = runStatus.progress?.current ?? 0;
+              const isDone = current > s.id || (!runStatus.isRunning && runStatus.lastRunStatus?.includes('✅'));
+              const isActive = runStatus.isRunning && current === s.id;
+
+              return (
+                <div key={s.id} style={{
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  background: isActive ? 'rgba(168,85,247,0.15)' : isDone ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${isActive ? 'rgba(168,85,247,0.5)' : isDone ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.05)'}`,
+                  transition: 'all 0.3s ease'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? '#c084fc' : isDone ? '#34d399' : 'rgba(241,240,255,0.4)' }}>
+                      Stage {s.id}
+                    </span>
+                    {isActive ? (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#c084fc', background: 'rgba(192,132,252,0.2)', padding: '1px 6px', borderRadius: 4, animation: 'pulse 1.5s infinite' }}>
+                        ACTIVE
+                      </span>
+                    ) : isDone ? (
+                      <span style={{ fontSize: 11, color: '#34d399' }}>✓</span>
+                    ) : (
+                      <span style={{ fontSize: 10, color: 'rgba(241,240,255,0.25)' }}>Pending</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: isActive ? '#f1f0ff' : isDone ? 'rgba(241,240,255,0.9)' : 'rgba(241,240,255,0.6)', marginBottom: 2 }}>
+                    {s.name}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'rgba(241,240,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {s.desc}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button
             className="btn-primary"
@@ -227,6 +307,88 @@ export default function SettingsPage() {
           Run from terminal: <code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: 4 }}>npm run start</code> · 
           Scheduled daemon: <code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: 4 }}>npm run schedule</code>
         </p>
+      </div>
+
+      {/* ── Lead Sources ────────────────────────────────────────── */}
+      <div className="card fade-up-1" style={{ padding: '24px', marginBottom: 20 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f1f0ff', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>🔌</span> Active Lead Sources
+        </h2>
+        <p style={{ fontSize: 12, color: 'rgba(241,240,255,0.4)', marginBottom: 16 }}>
+          Enable or disable specific lead scraping actors. Disabled sources will be skipped during pipeline runs.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          {[
+            { key: 'freelancer', name: 'Freelancer', icon: '💼', color: '#6366f1' },
+            { key: 'upwork', name: 'Upwork', icon: '🟢', color: '#10b981' },
+            { key: 'reddit', name: 'Reddit', icon: '🤖', color: '#f97316' },
+            { key: 'twitter', name: 'Twitter / X', icon: '🐦', color: '#38bdf8' },
+            { key: 'linkedin-public', name: 'LinkedIn Public', icon: '💼', color: '#0284c7' },
+          ].map((src) => {
+            const isEnabled = config?.sources?.[src.key] !== false;
+
+            const handleToggle = async () => {
+              if (!config) return;
+              const newSources = {
+                ...config.sources,
+                [src.key]: !isEnabled,
+              };
+              setConfig({ ...config, sources: newSources });
+              try {
+                await fetch('/api/config', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sources: newSources }),
+                });
+              } catch (err) {
+                console.error('Failed to update source status:', err);
+              }
+            };
+
+            return (
+              <div
+                key={src.key}
+                onClick={handleToggle}
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  background: isEnabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.01)',
+                  border: `1px solid ${isEnabled ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.2s ease',
+                  opacity: isEnabled ? 1 : 0.5,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 18 }}>{src.icon}</span>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: isEnabled ? '#f1f0ff' : 'rgba(241,240,255,0.5)' }}>{src.name}</p>
+                    <p style={{ fontSize: 10, color: isEnabled ? src.color : 'rgba(241,240,255,0.3)', marginTop: 1 }}>
+                      {isEnabled ? '● Active' : '○ Disabled'}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{
+                  width: 36, height: 20, borderRadius: 999, transition: 'background 0.2s',
+                  background: isEnabled ? '#7c3aed' : 'rgba(255,255,255,0.1)',
+                  position: 'relative', flexShrink: 0
+                }}>
+                  <div style={{
+                    width: 14, height: 14, borderRadius: '50%', background: '#fff',
+                    position: 'absolute', top: 3,
+                    left: isEnabled ? 19 : 3,
+                    transition: 'left 0.2s'
+                  }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Schedule ────────────────────────────────────────────── */}

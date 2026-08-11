@@ -17,6 +17,7 @@ import Database from 'better-sqlite3';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
+import { getDataFile } from '../utils/paths';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,13 +88,17 @@ export interface Rep {
 
 // ─── DB singleton ─────────────────────────────────────────────────────────────
 
-const DB_PATH = path.resolve(process.cwd(), 'leads.db');
+const DB_PATH = getDataFile('leads.db');
 let _db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (!_db) {
-    _db = new Database(DB_PATH);
-    _db.pragma('journal_mode = WAL');
+    const dir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    _db = new Database(DB_PATH, { timeout: 5000 });
+    _db.pragma('journal_mode = DELETE');
     _db.pragma('foreign_keys = ON');
     initSchema(_db);
   }
@@ -379,7 +384,7 @@ export function logTransition(
  */
 export function seedRepsFromConfig(): void {
   try {
-    const configPath = path.resolve(process.cwd(), 'pipeline-config.json');
+    const configPath = getDataFile('pipeline-config.json');
     if (!fs.existsSync(configPath)) return;
     const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as {
       reps?: Array<{ name: string; email: string }>;

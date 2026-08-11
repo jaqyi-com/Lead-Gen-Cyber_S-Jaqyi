@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { getDataFile } from '../utils/paths';
 
 /**
  * Pipeline configuration — loaded from pipeline-config.json at startup.
@@ -10,11 +11,13 @@ interface PipelineConfig {
   keywords: string[];
   categories: Record<string, string[]>;
   schedule: { enabled: boolean; cron: string; label: string };
+  sources?: Record<string, boolean>;
   lastRun: string | null;
   lastRunStatus: string | null;
+  progress?: { step: string; current: number; total: number } | null;
 }
 
-const CONFIG_PATH = path.resolve(__dirname, '../../../pipeline-config.json');
+const CONFIG_PATH = getDataFile('pipeline-config.json');
 
 function loadConfig(): PipelineConfig {
   try {
@@ -26,6 +29,7 @@ function loadConfig(): PipelineConfig {
       keywords: DEFAULT_KEYWORDS,
       categories: DEFAULT_CATEGORIES,
       schedule: { enabled: true, cron: '0 6 * * *', label: 'Daily at 6:00 AM' },
+      sources: DEFAULT_SOURCES,
       lastRun: null,
       lastRunStatus: null,
     };
@@ -43,6 +47,39 @@ export function updateLastRun(status: 'success' | 'failed', message?: string): v
     config.lastRunStatus = status === 'success' ? `✅ ${message ?? 'Completed'}` : `❌ ${message ?? 'Failed'}`;
     saveConfig(config);
   } catch { /* non-fatal */ }
+}
+
+export function updateProgress(step: string, current: number, total: number): void {
+  try {
+    const config = loadConfig();
+    config.progress = { step, current, total };
+    saveConfig(config);
+  } catch { /* non-fatal */ }
+}
+
+export function clearProgress(): void {
+  try {
+    const config = loadConfig();
+    config.progress = null;
+    saveConfig(config);
+  } catch { /* non-fatal */ }
+}
+
+const DEFAULT_SOURCES: Record<string, boolean> = {
+  freelancer: true,
+  upwork: true,
+  reddit: true,
+  twitter: true,
+  'linkedin-public': true,
+};
+
+export function getEnabledSources(): Record<string, boolean> {
+  try {
+    const cfg = loadConfig();
+    return { ...DEFAULT_SOURCES, ...(cfg.sources ?? {}) };
+  } catch {
+    return DEFAULT_SOURCES;
+  }
 }
 
 const DEFAULT_KEYWORDS = [

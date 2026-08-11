@@ -23,7 +23,8 @@ import { getLeadsByStatus, updateScore, DbLead } from '../storage/db';
 
 function loadKeywords(): string[] {
   try {
-    const configPath = path.resolve(process.cwd(), 'pipeline-config.json');
+    const { getDataFile } = require('../utils/paths');
+    const configPath = getDataFile('pipeline-config.json');
     const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as {
       keywords?: string[];
     };

@@ -5,10 +5,12 @@ import * as path from 'path';
 export const dynamic = 'force-dynamic';
 
 // Possible locations for the config file (local vs Vercel root)
-const CONFIG_PATHS = [
-  path.resolve(process.cwd(), '../pipeline-config.json'),  // local: dashboard/ -> parent
-  path.resolve(process.cwd(), 'pipeline-config.json'),     // Vercel: monorepo root
-];
+const CONFIG_PATHS = process.env.DATA_DIR 
+  ? [path.resolve(process.env.DATA_DIR, 'pipeline-config.json')] 
+  : [
+      path.resolve(process.cwd(), '../pipeline-config.json'),  // local: dashboard/ -> parent
+      path.resolve(process.cwd(), 'pipeline-config.json'),     // Vercel: monorepo root
+    ];
 
 const DEFAULT_CONFIG = {
   keywords: [
@@ -32,6 +34,13 @@ const DEFAULT_CONFIG = {
     'Software Types': ['SaaS', 'CRM Platforms', 'Data SaaS', 'AI Agents', 'Automation Systems', 'mobile app', 'web app'],
   },
   schedule: { enabled: true, cron: '0 6 * * *', label: 'Daily at 6:00 AM' },
+  sources: {
+    freelancer: true,
+    upwork: true,
+    reddit: true,
+    twitter: true,
+    'linkedin-public': true,
+  },
   lastRun: null,
   lastRunStatus: null,
 };
@@ -74,6 +83,7 @@ export async function POST(req: Request) {
       keywords?: string[];
       categories?: Record<string, string[]>;
       schedule?: { enabled: boolean; cron: string; label: string };
+      sources?: Record<string, boolean>;
     };
     const current = readConfig();
 
@@ -82,6 +92,7 @@ export async function POST(req: Request) {
       ...(body.keywords !== undefined ? { keywords: body.keywords } : {}),
       ...(body.categories !== undefined ? { categories: body.categories } : {}),
       ...(body.schedule !== undefined ? { schedule: body.schedule } : {}),
+      ...(body.sources !== undefined ? { sources: body.sources } : {}),
     };
 
     writeConfig(updated);

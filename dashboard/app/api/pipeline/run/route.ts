@@ -6,9 +6,9 @@ import * as os from 'os';
 
 export const dynamic = 'force-dynamic';
 
-const PIPELINE_ROOT = path.resolve(process.cwd(), '..');
-const STATUS_FILE = path.resolve(PIPELINE_ROOT, 'pipeline-config.json');
-const LOG_FILE = path.resolve(os.tmpdir(), 'pipeline-run.log');
+const PIPELINE_ROOT = process.env.PIPELINE_ROOT ? path.resolve(process.env.PIPELINE_ROOT) : path.resolve(process.cwd(), '..');
+const STATUS_FILE = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR, 'pipeline-config.json') : path.resolve(PIPELINE_ROOT, 'pipeline-config.json');
+const LOG_FILE = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR, 'pipeline-run.log') : path.resolve(os.tmpdir(), 'pipeline-run.log');
 
 let runningPid: number | null = null;
 
@@ -18,11 +18,12 @@ export async function GET() {
     return NextResponse.json({
       lastRun: config.lastRun,
       lastRunStatus: config.lastRunStatus,
+      progress: runningPid !== null ? config.progress : null,
       isRunning: runningPid !== null,
       pid: runningPid,
     });
   } catch {
-    return NextResponse.json({ lastRun: null, lastRunStatus: null, isRunning: false });
+    return NextResponse.json({ lastRun: null, lastRunStatus: null, progress: null, isRunning: false });
   }
 }
 

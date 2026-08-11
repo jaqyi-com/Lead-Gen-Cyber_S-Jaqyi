@@ -21,7 +21,8 @@ import {
 
 function loadThreshold(): number {
   try {
-    const configPath = path.resolve(process.cwd(), 'pipeline-config.json');
+    const { getDataFile } = require('../utils/paths');
+    const configPath = getDataFile('pipeline-config.json');
     const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as {
       score_alert_threshold?: number;
     };
