@@ -168,7 +168,7 @@ export default function SettingsPage() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-      <div style={{ textAlign: 'center', color: 'rgba(241,240,255,0.4)' }}>
+      <div style={{ textAlign: 'center', color: 'var(--muted)' }}>
         <div className="spin" style={{ width: 32, height: 32, border: '3px solid rgba(124,58,237,0.2)', borderTop: '3px solid #7c3aed', borderRadius: '50%', margin: '0 auto 16px' }}/>
         Loading config…
       </div>
@@ -179,36 +179,36 @@ export default function SettingsPage() {
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
       <div className="fade-up" style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#f1f0ff', letterSpacing: '-0.02em' }}>Pipeline Settings</h1>
-        <p style={{ fontSize: 13, color: 'rgba(241,240,255,0.4)', marginTop: 4 }}>Manage keywords, categories, schedule, and trigger runs</p>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>Pipeline Settings</h1>
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Manage keywords, categories, schedule, and trigger runs</p>
       </div>
 
       {/* ── Pipeline Control ────────────────────────────────────── */}
       <div className="card fade-up-1" style={{ padding: '24px', marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f1f0ff', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>🚀</span> Pipeline Control
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
           {/* Last run */}
-          <div style={{ padding: '16px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p style={{ fontSize: 11, color: 'rgba(241,240,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Last Run</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#f1f0ff' }}>
+          <div style={{ padding: '16px', borderRadius: 12, background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 11, color: 'var(--subtle)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Last Run</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
               {runStatus.lastRun ? new Date(runStatus.lastRun).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }) : '—'}
             </p>
             {runStatus.lastRunStatus && (
-              <p style={{ fontSize: 12, color: 'rgba(241,240,255,0.5)', marginTop: 4 }}>{runStatus.lastRunStatus}</p>
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>{runStatus.lastRunStatus}</p>
             )}
           </div>
           {/* Status */}
-          <div style={{ padding: '16px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p style={{ fontSize: 11, color: 'rgba(241,240,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Status</p>
+          <div style={{ padding: '16px', borderRadius: 12, background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 11, color: 'var(--subtle)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Status</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: runStatus.isRunning ? '#10b981' : 'rgba(255,255,255,0.2)', boxShadow: runStatus.isRunning ? '0 0 8px #10b981' : 'none', animation: runStatus.isRunning ? 'pulse 1.5s infinite' : 'none' }}/>
-              <span style={{ fontSize: 13, fontWeight: 600, color: runStatus.isRunning ? '#10b981' : 'rgba(241,240,255,0.6)' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: runStatus.isRunning ? '#10b981' : 'var(--subtle)', boxShadow: runStatus.isRunning ? '0 0 8px #10b981' : 'none', animation: runStatus.isRunning ? 'pulse 1.5s infinite' : 'none' }}/>
+              <span style={{ fontSize: 13, fontWeight: 600, color: runStatus.isRunning ? '#10b981' : 'var(--muted)' }}>
                 {runStatus.isRunning ? 'Running…' : 'Idle'}
               </span>
-              {runStatus.pid && <span style={{ fontSize: 11, color: 'rgba(241,240,255,0.3)' }}>PID {runStatus.pid}</span>}
+              {runStatus.pid && <span style={{ fontSize: 11, color: 'var(--subtle)' }}>PID {runStatus.pid}</span>}
             </div>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function SettingsPage() {
         {/* ── 10-Step Pipeline Progress Stepper ────────────────────────── */}
         <div style={{ marginBottom: 24, marginTop: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#f1f0ff', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>📊</span> Pipeline Execution Steps
             </span>
             {runStatus.progress ? (
@@ -224,12 +224,12 @@ export default function SettingsPage() {
                 Step {runStatus.progress.current} of {runStatus.progress.total}: {runStatus.progress.step}
               </span>
             ) : (
-              <span style={{ fontSize: 12, color: 'rgba(241,240,255,0.4)' }}>10 Stages Configured</span>
+              <span style={{ fontSize: 12, color: 'var(--muted)' }}>10 Stages Configured</span>
             )}
           </div>
 
           {/* Master Progress Bar */}
-          <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ width: '100%', height: 6, background: 'var(--border)', borderRadius: 999, overflow: 'hidden', marginBottom: 16 }}>
             <div style={{
               height: '100%',
               width: runStatus.progress ? `${(runStatus.progress.current / runStatus.progress.total) * 100}%` : '0%',
@@ -261,12 +261,12 @@ export default function SettingsPage() {
                 <div key={s.id} style={{
                   padding: '10px 12px',
                   borderRadius: 10,
-                  background: isActive ? 'rgba(168,85,247,0.15)' : isDone ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isActive ? 'rgba(168,85,247,0.5)' : isDone ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.05)'}`,
+                  background: isActive ? 'rgba(168,85,247,0.15)' : isDone ? 'rgba(16,185,129,0.10)' : 'var(--surface2)',
+                  border: `1px solid ${isActive ? 'rgba(168,85,247,0.5)' : isDone ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`,
                   transition: 'all 0.3s ease'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? '#c084fc' : isDone ? '#34d399' : 'rgba(241,240,255,0.4)' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? '#c084fc' : isDone ? '#34d399' : 'var(--muted)' }}>
                       Stage {s.id}
                     </span>
                     {isActive ? (
@@ -276,13 +276,13 @@ export default function SettingsPage() {
                     ) : isDone ? (
                       <span style={{ fontSize: 11, color: '#34d399' }}>✓</span>
                     ) : (
-                      <span style={{ fontSize: 10, color: 'rgba(241,240,255,0.25)' }}>Pending</span>
+                      <span style={{ fontSize: 10, color: 'var(--subtle)' }}>Pending</span>
                     )}
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: isActive ? '#f1f0ff' : isDone ? 'rgba(241,240,255,0.9)' : 'rgba(241,240,255,0.6)', marginBottom: 2 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: isActive ? 'var(--text)' : isDone ? 'var(--text)' : 'var(--muted)', marginBottom: 2 }}>
                     {s.name}
                   </div>
-                  <div style={{ fontSize: 10, color: 'rgba(241,240,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ fontSize: 10, color: 'var(--subtle)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {s.desc}
                   </div>
                 </div>
@@ -303,18 +303,18 @@ export default function SettingsPage() {
           <button className="btn-ghost" onClick={fetchRunStatus} style={{ padding: '10px 16px', fontSize: 13 }}>↻ Refresh</button>
           {runMsg && <span style={{ fontSize: 13, color: runMsg.startsWith('🚀') ? '#10b981' : '#f43f5e' }}>{runMsg}</span>}
         </div>
-        <p style={{ fontSize: 11, color: 'rgba(241,240,255,0.25)', marginTop: 10 }}>
-          Run from terminal: <code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: 4 }}>npm run start</code> · 
-          Scheduled daemon: <code style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: 4 }}>npm run schedule</code>
+        <p style={{ fontSize: 11, color: 'var(--subtle)', marginTop: 10 }}>
+          Run from terminal: <code style={{ background: 'var(--surface2)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--border)' }}>npm run start</code> · 
+          Scheduled daemon: <code style={{ background: 'var(--surface2)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--border)' }}>npm run schedule</code>
         </p>
       </div>
 
       {/* ── Lead Sources ────────────────────────────────────────── */}
       <div className="card fade-up-1" style={{ padding: '24px', marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f1f0ff', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>🔌</span> Active Lead Sources
         </h2>
-        <p style={{ fontSize: 12, color: 'rgba(241,240,255,0.4)', marginBottom: 16 }}>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
           Enable or disable specific lead scraping actors. Disabled sources will be skipped during pipeline runs.
         </p>
 
@@ -354,20 +354,20 @@ export default function SettingsPage() {
                   padding: '14px 16px',
                   borderRadius: 12,
                   cursor: 'pointer',
-                  background: isEnabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.01)',
-                  border: `1px solid ${isEnabled ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)'}`,
+                  background: isEnabled ? 'var(--surface2)' : 'var(--bg)',
+                  border: `1px solid ${isEnabled ? 'var(--border2)' : 'var(--border)'}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   transition: 'all 0.2s ease',
-                  opacity: isEnabled ? 1 : 0.5,
+                  opacity: isEnabled ? 1 : 0.55,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 18 }}>{src.icon}</span>
                   <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: isEnabled ? '#f1f0ff' : 'rgba(241,240,255,0.5)' }}>{src.name}</p>
-                    <p style={{ fontSize: 10, color: isEnabled ? src.color : 'rgba(241,240,255,0.3)', marginTop: 1 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{src.name}</p>
+                    <p style={{ fontSize: 10, color: isEnabled ? src.color : 'var(--subtle)', marginTop: 1 }}>
                       {isEnabled ? '● Active' : '○ Disabled'}
                     </p>
                   </div>
@@ -375,7 +375,7 @@ export default function SettingsPage() {
 
                 <div style={{
                   width: 36, height: 20, borderRadius: 999, transition: 'background 0.2s',
-                  background: isEnabled ? '#7c3aed' : 'rgba(255,255,255,0.1)',
+                  background: isEnabled ? '#7c3aed' : 'var(--border2)',
                   position: 'relative', flexShrink: 0
                 }}>
                   <div style={{
@@ -393,7 +393,7 @@ export default function SettingsPage() {
 
       {/* ── Schedule ────────────────────────────────────────────── */}
       <div className="card fade-up-1" style={{ padding: '24px', marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f1f0ff', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>🕐</span> Schedule
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -402,8 +402,8 @@ export default function SettingsPage() {
               onClick={() => config && setConfig({ ...config, schedule: { ...config.schedule, enabled: !config.schedule.enabled } })}
               style={{
                 width: 40, height: 22, borderRadius: 999, cursor: 'pointer', transition: 'background 0.2s',
-                background: config?.schedule.enabled ? 'rgba(124,58,237,0.6)' : 'rgba(255,255,255,0.1)',
-                border: `1px solid ${config?.schedule.enabled ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.15)'}`,
+                background: config?.schedule.enabled ? 'rgba(124,58,237,0.6)' : 'var(--border2)',
+                border: `1px solid ${config?.schedule.enabled ? 'rgba(124,58,237,0.4)' : 'var(--border)'}`,
                 position: 'relative',
               }}
             >
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                 transition: 'left 0.2s',
               }}/>
             </div>
-            <span style={{ fontSize: 13, color: 'rgba(241,240,255,0.7)' }}>Enable automatic scheduling</span>
+            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Enable automatic scheduling</span>
           </label>
         </div>
 
@@ -425,19 +425,20 @@ export default function SettingsPage() {
               onClick={() => setCron(preset.cron)}
               style={{
                 padding: '12px 16px', borderRadius: 10, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
-                background: selectedCronPreset === preset.cron ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${selectedCronPreset === preset.cron ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                background: selectedCronPreset === preset.cron ? 'rgba(124,58,237,0.15)' : 'var(--surface2)',
+                border: `1px solid ${selectedCronPreset === preset.cron ? 'rgba(124,58,237,0.4)' : 'var(--border)'}`,
+                fontFamily: 'inherit',
               }}
             >
-              <p style={{ fontSize: 12, fontWeight: 600, color: selectedCronPreset === preset.cron ? '#c4b5fd' : '#f1f0ff' }}>{preset.label}</p>
-              <p style={{ fontSize: 10, color: 'rgba(241,240,255,0.3)', marginTop: 2, fontFamily: 'monospace' }}>{preset.cron}</p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: selectedCronPreset === preset.cron ? '#a78bfa' : 'var(--text)' }}>{preset.label}</p>
+              <p style={{ fontSize: 10, color: 'var(--subtle)', marginTop: 2, fontFamily: 'monospace' }}>{preset.cron}</p>
             </button>
           ))}
         </div>
 
         {config?.schedule.cron && !CRON_PRESETS.find((p) => p.cron === config.schedule.cron) && (
-          <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p style={{ fontSize: 11, color: 'rgba(241,240,255,0.4)', marginBottom: 4 }}>Custom cron</p>
+          <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 11, color: 'var(--subtle)', marginBottom: 4 }}>Custom cron</p>
             <input
               className="input-field"
               style={{ fontFamily: 'monospace', fontSize: 13 }}
@@ -452,8 +453,8 @@ export default function SettingsPage() {
       {/* ── Keywords ────────────────────────────────────────────── */}
       <div className="card fade-up-2" style={{ padding: '24px', marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f1f0ff', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>🔑</span> Keywords <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(241,240,255,0.3)' }}>({config?.keywords.length ?? 0} total)</span>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>🔑</span> Keywords <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--subtle)' }}>({config?.keywords.length ?? 0} total)</span>
           </h2>
         </div>
 
@@ -486,11 +487,11 @@ export default function SettingsPage() {
           <div key={cat} style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: CATEGORY_COLORS[cat] ?? '#6b7280' }}/>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(241,240,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{cat}</span>
-              <span style={{ fontSize: 11, color: 'rgba(241,240,255,0.25)' }}>({kws.length})</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{cat}</span>
+              <span style={{ fontSize: 11, color: 'var(--subtle)' }}>({kws.length})</span>
               <button
                 onClick={() => removeCategory(cat)}
-                style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(241,240,255,0.25)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
+                style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--subtle)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
               >✕ Remove cat</button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -500,13 +501,13 @@ export default function SettingsPage() {
                   padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 500,
                   background: (CATEGORY_COLORS[cat] ?? '#6b7280') + '20',
                   color: CATEGORY_COLORS[cat] ?? '#6b7280',
-                  border: `1px solid ${(CATEGORY_COLORS[cat] ?? '#6b7280')}30`,
+                  border: `1px solid ${(CATEGORY_COLORS[cat] ?? '#6b7280')}40`,
                 }}>
                   {kw}
                   <button onClick={() => removeKeyword(kw)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', opacity: 0.6, padding: 0, fontSize: 11 }}>✕</button>
                 </span>
               ))}
-              {kws.length === 0 && <span style={{ fontSize: 12, color: 'rgba(241,240,255,0.2)', fontStyle: 'italic' }}>No keywords in this category</span>}
+              {kws.length === 0 && <span style={{ fontSize: 12, color: 'var(--subtle)', fontStyle: 'italic' }}>No keywords in this category</span>}
             </div>
           </div>
         ))}
@@ -520,15 +521,15 @@ export default function SettingsPage() {
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6b7280' }}/>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(241,240,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Uncategorized</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Uncategorized</span>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {uncategorized.map((kw) => (
                   <span key={kw} style={{
                     display: 'inline-flex', alignItems: 'center', gap: 5,
                     padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 500,
-                    background: 'rgba(107,114,128,0.15)', color: '#9ca3af',
-                    border: '1px solid rgba(107,114,128,0.25)',
+                    background: 'var(--surface2)', color: 'var(--muted)',
+                    border: '1px solid var(--border)',
                   }}>
                     {kw}
                     <button onClick={() => removeKeyword(kw)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', opacity: 0.6, padding: 0, fontSize: 11 }}>✕</button>
@@ -540,7 +541,7 @@ export default function SettingsPage() {
         })()}
 
         {/* Add category */}
-        <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
           <input
             className="input-field"
             style={{ flex: 1, maxWidth: 280 }}
@@ -556,19 +557,19 @@ export default function SettingsPage() {
       {/* ── Pipeline Logs ────────────────────────────────────────── */}
       <div className="card fade-up-2" style={{ padding: '24px', marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f1f0ff', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>📁</span> Live Pipeline Logs
           </h2>
           <button className="btn-ghost" onClick={fetchLogs} style={{ padding: '4px 10px', fontSize: 11 }}>↻ Refresh Logs</button>
         </div>
         <pre style={{
-          background: '#09090f',
+          background: 'var(--surface2)',
           color: '#34d399',
           fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
           fontSize: 12,
           padding: '16px',
           borderRadius: 8,
-          border: '1px solid rgba(255,255,255,0.06)',
+          border: '1px solid var(--border)',
           height: 250,
           overflowY: 'auto',
           whiteSpace: 'pre-wrap',
@@ -593,3 +594,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

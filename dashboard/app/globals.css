@@ -61,7 +61,114 @@
 }
 
 
-html, body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+html, body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ── Light mode: inline style overrides ──────────────────────────────────────
+   Many page components use hardcoded rgba(255,255,255,...) inline styles which
+   are invisible on a light background. These global rules compensate by targeting
+   the data-theme attribute on <html>.
+*/
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Cards & surface containers in light mode */
+[data-theme="light"] .card {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+/* Stat top-gradient bars stay vivid in light mode */
+[data-theme="light"] .stat-violet::after,
+[data-theme="light"] .stat-cyan::after,
+[data-theme="light"] .stat-green::after,
+[data-theme="light"] .stat-orange::after { opacity: 0.9; }
+
+/* sidebar-link active in light mode */
+[data-theme="light"] .sidebar-link.active {
+  color: #5b21b6;
+  background: rgba(109,40,217,0.1);
+  border-color: rgba(109,40,217,0.2);
+}
+[data-theme="light"] .sidebar-link:hover {
+  background: rgba(0,0,0,0.04);
+  color: var(--text);
+}
+
+/* Lead table hover */
+[data-theme="light"] .lead-row:hover { background: rgba(109,40,217,0.05); }
+[data-theme="light"] .lead-row:hover td:first-child { border-left-color: #6d28d9; }
+
+/* Score badges brighter in light */
+[data-theme="light"] .score-5 { background: rgba(239,68,68,0.12);  color: #b91c1c; border-color: rgba(239,68,68,0.3); }
+[data-theme="light"] .score-4 { background: rgba(249,115,22,0.12); color: #c2410c; border-color: rgba(249,115,22,0.3); }
+[data-theme="light"] .score-3 { background: rgba(234,179,8,0.12);  color: #92400e; border-color: rgba(234,179,8,0.3); }
+[data-theme="light"] .score-2 { background: rgba(59,130,246,0.12); color: #1d4ed8; border-color: rgba(59,130,246,0.3); }
+[data-theme="light"] .score-1 { background: rgba(107,114,128,0.10);color: #374151; border-color: rgba(107,114,128,0.25); }
+
+/* Pills brighter in light */
+[data-theme="light"] .pill-new       { background: rgba(59,130,246,0.1);  color:#1d4ed8; border-color:rgba(59,130,246,0.25); }
+[data-theme="light"] .pill-contacted { background: rgba(234,179,8,0.1);   color:#92400e; border-color:rgba(234,179,8,0.25); }
+[data-theme="light"] .pill-qualified { background: rgba(124,58,237,0.1);  color:#5b21b6; border-color:rgba(124,58,237,0.25); }
+[data-theme="light"] .pill-closed    { background: rgba(16,185,129,0.1);  color:#065f46; border-color:rgba(16,185,129,0.25); }
+[data-theme="light"] .pill-lost      { background: rgba(239,68,68,0.1);   color:#b91c1c; border-color:rgba(239,68,68,0.25); }
+
+/* API status colors brighter in light */
+[data-theme="light"] .api-ok   { color: #065f46; }
+[data-theme="light"] .api-fail { color: #be123c; }
+[data-theme="light"] .api-idle { color: rgba(0,0,0,0.35); }
+[data-theme="light"] .api-loading { color: #92400e; }
+
+/* Recharts tooltip in light mode */
+[data-theme="light"] .recharts-tooltip-wrapper .custom-tooltip {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  color: #1a1730;
+}
+
+/* ── Light mode: automatic inline style overrides ── */
+[data-theme="light"] [style*="color: #f1f0ff"],
+[data-theme="light"] [style*="color:#f1f0ff"],
+[data-theme="light"] [style*="color: #fff"],
+[data-theme="light"] [style*="color:#fff"],
+[data-theme="light"] [style*="color: white"],
+[data-theme="light"] [style*="color:white"] {
+  color: var(--text) !important;
+}
+
+/* Fix primary button white text getting overridden */
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-primary * {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] [style*="color: rgba(241,240,255"],
+[data-theme="light"] [style*="color:rgba(241,240,255"],
+[data-theme="light"] [style*="color: rgba(255,255,255,0.3"],
+[data-theme="light"] [style*="color: rgba(255,255,255,0.4"],
+[data-theme="light"] [style*="color: rgba(255,255,255,0.5"],
+[data-theme="light"] [style*="color: rgba(255,255,255,0.6"] {
+  color: var(--muted) !important;
+}
+
+[data-theme="light"] [style*="background: rgba(255,255,255,0.0"],
+[data-theme="light"] [style*="background:rgba(255,255,255,0.0"],
+[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.0"],
+[data-theme="light"] [style*="background: #0"] {
+  background: var(--surface2) !important;
+}
+
+[data-theme="light"] [style*="border: 1px solid rgba(255,255,255"],
+[data-theme="light"] [style*="border:1px solid rgba(255,255,255"],
+[data-theme="light"] [style*="border: 1px solid rgba(255, 255, 255"] {
+  border-color: var(--border) !important;
+}
+
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
