@@ -1,6 +1,7 @@
 FROM node:20
 
 WORKDIR /app
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 
 # Copy root package.json and install
 COPY package*.json ./

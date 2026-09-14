@@ -38,10 +38,29 @@ export const CATEGORY_COLORS: Record<string, string> = {
 
 export const SOURCE_ICONS: Record<string, string> = {
   freelancer: '💼',
-  upwork: '🔺',
+  upwork: '🟢',
   reddit: '🤖',
   twitter: '𝕏',
   'linkedin-public': '🔗',
+  facebook: '📘',
+  threads: '🧵',
+  indiehackers: '🚀',
+  producthunt: '🐱',
+  hackernews: '🟧',
+  bluesky: '🦋',
+  github: '🐙',
+  mastodon: '🐘',
+  quora: '❓',
+  devto: '👩‍💻',
+  youtube: '▶️',
+  telegram: '✈️',
+  clutch: '🏷️',
+  craigslist: '📋',
+  fiverr: '❇️',
+  contra: '⚡',
+  wellfound: '✌️',
+  guru: '🧘',
+  peopleperhour: '⏱️',
 };
 
 export const STATUS_COLORS: Record<string, string> = {

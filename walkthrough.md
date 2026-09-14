@@ -35,6 +35,12 @@ During the latest pipeline run:
   - `Dropped: Him Patel's Post (freelancer profile)`
   - `Dropped: CA Vijendra Jain's Post (article/post with no project scope)`
 - **Google Sheets & SMTP**: 9 high-quality rows appended to the spreadsheet, and the summary digest email was sent via SMTP.
+- [types.ts](file:///Volumes/akshat/Lead/dashboard/lib/types.ts): Added icon mappings for all 24 sources.
+- [OverviewClient.tsx](file:///Volumes/akshat/Lead/dashboard/components/OverviewClient.tsx): Added distinct color styling for all 24 sources.
+- [settings/page.tsx](file:///Volumes/akshat/Lead/dashboard/app/settings/page.tsx):
+  - **Apify Actor API Token Card**: Added token input with show/hide password toggle, real-time live connectivity testing (`/api/test/apify`), direct link to Apify Console, and immediate saving to `pipeline-config.json`.
+  - Added toggle switches for all 24 sources to give full control over which scrapers run.
+- [apifyClient.ts](file:///Volumes/akshat/Lead/src/sources/apifyClient.ts): Dynamically loads the active Apify token from `pipeline-config.json` before falling back to `APIFY_TOKEN`.
 
 ---
 

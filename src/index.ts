@@ -18,6 +18,25 @@ import { fetchLeads as fetchUpwork } from './sources/upwork';
 import { fetchLeads as fetchReddit } from './sources/reddit';
 import { fetchLeads as fetchTwitter } from './sources/twitter';
 import { fetchLeads as fetchLinkedIn } from './sources/linkedin-public';
+import { fetchLeads as fetchFacebook } from './sources/facebook';
+import { fetchLeads as fetchThreads } from './sources/threads';
+import { fetchLeads as fetchIndiehackers } from './sources/indiehackers';
+import { fetchLeads as fetchProducthunt } from './sources/producthunt';
+import { fetchLeads as fetchHackernews } from './sources/hackernews';
+import { fetchLeads as fetchBluesky } from './sources/bluesky';
+import { fetchLeads as fetchGithub } from './sources/github';
+import { fetchLeads as fetchMastodon } from './sources/mastodon';
+import { fetchLeads as fetchQuora } from './sources/quora';
+import { fetchLeads as fetchDevto } from './sources/devto';
+import { fetchLeads as fetchYoutube } from './sources/youtube';
+import { fetchLeads as fetchTelegram } from './sources/telegram';
+import { fetchLeads as fetchClutch } from './sources/clutch';
+import { fetchLeads as fetchCraigslist } from './sources/craigslist';
+import { fetchLeads as fetchFiverr } from './sources/fiverr';
+import { fetchLeads as fetchContra } from './sources/contra';
+import { fetchLeads as fetchWellfound } from './sources/wellfound';
+import { fetchLeads as fetchGuru } from './sources/guru';
+import { fetchLeads as fetchPeopleperhour } from './sources/peopleperhour';
 
 import { normalizeLeads, RawLead, SourceName } from './pipeline/normalize';
 import { dedupeLeads } from './pipeline/dedupe';
@@ -44,6 +63,25 @@ const SOURCES: Array<{
   { name: 'reddit', fetch: fetchReddit },
   { name: 'twitter', fetch: fetchTwitter },
   { name: 'linkedin-public', fetch: fetchLinkedIn },
+  { name: 'facebook', fetch: fetchFacebook },
+  { name: 'threads', fetch: fetchThreads },
+  { name: 'indiehackers', fetch: fetchIndiehackers },
+  { name: 'producthunt', fetch: fetchProducthunt },
+  { name: 'hackernews', fetch: fetchHackernews },
+  { name: 'bluesky', fetch: fetchBluesky },
+  { name: 'github', fetch: fetchGithub },
+  { name: 'mastodon', fetch: fetchMastodon },
+  { name: 'quora', fetch: fetchQuora },
+  { name: 'devto', fetch: fetchDevto },
+  { name: 'youtube', fetch: fetchYoutube },
+  { name: 'telegram', fetch: fetchTelegram },
+  { name: 'clutch', fetch: fetchClutch },
+  { name: 'craigslist', fetch: fetchCraigslist },
+  { name: 'fiverr', fetch: fetchFiverr },
+  { name: 'contra', fetch: fetchContra },
+  { name: 'wellfound', fetch: fetchWellfound },
+  { name: 'guru', fetch: fetchGuru },
+  { name: 'peopleperhour', fetch: fetchPeopleperhour },
 ];
 
 // ─── Orchestrator ─────────────────────────────────────────────────────────────

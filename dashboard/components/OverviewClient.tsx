@@ -192,7 +192,32 @@ export default function OverviewClient({ stats, byCategory, bySource, byScore, s
               {bySource.map(({ name, count }) => {
                 const total = bySource.reduce((s, x) => s + x.count, 0);
                 const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                const srcColors: Record<string, string> = { freelancer:'#7c3aed', upwork:'#06b6d4', reddit:'#f59e0b', twitter:'#e2e8f0', 'linkedin-public':'#10b981' };
+                const srcColors: Record<string, string> = {
+                  freelancer: '#7c3aed',
+                  upwork: '#06b6d4',
+                  reddit: '#f59e0b',
+                  twitter: '#38bdf8',
+                  'linkedin-public': '#10b981',
+                  facebook: '#3b82f6',
+                  threads: '#ec4899',
+                  indiehackers: '#059669',
+                  producthunt: '#f97316',
+                  hackernews: '#ea580c',
+                  bluesky: '#0284c7',
+                  github: '#8b5cf6',
+                  mastodon: '#6366f1',
+                  quora: '#ef4444',
+                  devto: '#14b8a6',
+                  youtube: '#dc2626',
+                  telegram: '#0ea5e9',
+                  clutch: '#f43f5e',
+                  craigslist: '#84cc16',
+                  fiverr: '#10b981',
+                  contra: '#eab308',
+                  wellfound: '#d97706',
+                  guru: '#9333ea',
+                  peopleperhour: '#f59e0b',
+                };
                 const color = srcColors[name] ?? '#6b7280';
                 return (
                   <div key={name}>

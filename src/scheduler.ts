@@ -67,6 +67,26 @@ async function runPipeline(): Promise<void> {
   const { fetchLeads: fetchReddit } = await import('./sources/reddit');
   const { fetchLeads: fetchTwitter } = await import('./sources/twitter');
   const { fetchLeads: fetchLinkedIn } = await import('./sources/linkedin-public');
+  const { fetchLeads: fetchFacebook } = await import('./sources/facebook');
+  const { fetchLeads: fetchThreads } = await import('./sources/threads');
+  const { fetchLeads: fetchIndiehackers } = await import('./sources/indiehackers');
+  const { fetchLeads: fetchProducthunt } = await import('./sources/producthunt');
+  const { fetchLeads: fetchHackernews } = await import('./sources/hackernews');
+  const { fetchLeads: fetchBluesky } = await import('./sources/bluesky');
+  const { fetchLeads: fetchGithub } = await import('./sources/github');
+  const { fetchLeads: fetchMastodon } = await import('./sources/mastodon');
+  const { fetchLeads: fetchQuora } = await import('./sources/quora');
+  const { fetchLeads: fetchDevto } = await import('./sources/devto');
+  const { fetchLeads: fetchYoutube } = await import('./sources/youtube');
+  const { fetchLeads: fetchTelegram } = await import('./sources/telegram');
+  const { fetchLeads: fetchClutch } = await import('./sources/clutch');
+  const { fetchLeads: fetchCraigslist } = await import('./sources/craigslist');
+  const { fetchLeads: fetchFiverr } = await import('./sources/fiverr');
+  const { fetchLeads: fetchContra } = await import('./sources/contra');
+  const { fetchLeads: fetchWellfound } = await import('./sources/wellfound');
+  const { fetchLeads: fetchGuru } = await import('./sources/guru');
+  const { fetchLeads: fetchPeopleperhour } = await import('./sources/peopleperhour');
+
   const { normalizeLeads } = await import('./pipeline/normalize');
   const { dedupeLeads } = await import('./pipeline/dedupe');
   const { classifyLeads } = await import('./pipeline/classify');
@@ -82,6 +102,25 @@ async function runPipeline(): Promise<void> {
     { name: 'reddit', fetch: fetchReddit },
     { name: 'twitter', fetch: fetchTwitter },
     { name: 'linkedin-public', fetch: fetchLinkedIn },
+    { name: 'facebook', fetch: fetchFacebook },
+    { name: 'threads', fetch: fetchThreads },
+    { name: 'indiehackers', fetch: fetchIndiehackers },
+    { name: 'producthunt', fetch: fetchProducthunt },
+    { name: 'hackernews', fetch: fetchHackernews },
+    { name: 'bluesky', fetch: fetchBluesky },
+    { name: 'github', fetch: fetchGithub },
+    { name: 'mastodon', fetch: fetchMastodon },
+    { name: 'quora', fetch: fetchQuora },
+    { name: 'devto', fetch: fetchDevto },
+    { name: 'youtube', fetch: fetchYoutube },
+    { name: 'telegram', fetch: fetchTelegram },
+    { name: 'clutch', fetch: fetchClutch },
+    { name: 'craigslist', fetch: fetchCraigslist },
+    { name: 'fiverr', fetch: fetchFiverr },
+    { name: 'contra', fetch: fetchContra },
+    { name: 'wellfound', fetch: fetchWellfound },
+    { name: 'guru', fetch: fetchGuru },
+    { name: 'peopleperhour', fetch: fetchPeopleperhour },
   ];
 
   console.log('\n========================================');

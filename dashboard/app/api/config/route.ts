@@ -74,7 +74,11 @@ function writeConfig(config: unknown) {
 
 export async function GET() {
   const config = readConfig();
-  return NextResponse.json(config);
+  const token = config.apifyToken || process.env.APIFY_TOKEN || '';
+  return NextResponse.json({
+    ...config,
+    apifyToken: token,
+  });
 }
 
 export async function POST(req: Request) {
@@ -84,6 +88,7 @@ export async function POST(req: Request) {
       categories?: Record<string, string[]>;
       schedule?: { enabled: boolean; cron: string; label: string };
       sources?: Record<string, boolean>;
+      apifyToken?: string;
     };
     const current = readConfig();
 
@@ -93,7 +98,12 @@ export async function POST(req: Request) {
       ...(body.categories !== undefined ? { categories: body.categories } : {}),
       ...(body.schedule !== undefined ? { schedule: body.schedule } : {}),
       ...(body.sources !== undefined ? { sources: body.sources } : {}),
+      ...(body.apifyToken !== undefined ? { apifyToken: body.apifyToken.trim() } : {}),
     };
+
+    if (body.apifyToken !== undefined) {
+      process.env.APIFY_TOKEN = body.apifyToken.trim();
+    }
 
     writeConfig(updated);
     return NextResponse.json({ ok: true, config: updated });

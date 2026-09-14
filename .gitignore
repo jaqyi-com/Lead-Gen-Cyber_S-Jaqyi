@@ -10,6 +10,17 @@ gmail-credentials.json
 # Dedupe cache (contains processed URLs — optional to commit)
 seen-hashes.json
 
+# Keys & Scratch
+*.pem
+*.tar.gz
+scratch/
+outreach_log.json
+*.xlsx
+
+# Next.js build
+dashboard/.next/
+dashboard/out/
+
 # Logs
 logs/
 *.log

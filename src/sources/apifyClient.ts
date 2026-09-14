@@ -1,6 +1,23 @@
 import axios from 'axios';
+import * as fs from 'fs';
+import { getDataFile } from '../utils/paths';
 
-const APIFY_TOKEN = process.env.APIFY_TOKEN!;
+/**
+ * Returns the active Apify token from pipeline-config.json (frontend config)
+ * or falls back to the APIFY_TOKEN environment variable.
+ */
+export function getApifyToken(): string {
+  try {
+    const configPath = getDataFile('pipeline-config.json');
+    if (fs.existsSync(configPath)) {
+      const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (typeof cfg.apifyToken === 'string' && cfg.apifyToken.trim().length > 0) {
+        return cfg.apifyToken.trim();
+      }
+    }
+  } catch { /* fallback to env */ }
+  return process.env.APIFY_TOKEN ?? '';
+}
 
 /**
  * Builds a newline-joined queries string with Google date range operators.
@@ -36,9 +53,14 @@ export async function runApifyActor(
   input: Record<string, unknown>,
   timeoutMs = 300_000
 ): Promise<Record<string, unknown>[]> {
+  const token = getApifyToken();
+  if (!token) {
+    throw new Error(`Apify token is missing. Set it in Dashboard Settings or APIFY_TOKEN environment variable.`);
+  }
+
   // 1. Start the run
   const runRes = await axios.post(
-    `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/runs?token=${APIFY_TOKEN}`,
+    `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/runs?token=${token}`,
     input,
     { headers: { 'Content-Type': 'application/json' }, timeout: 30_000 }
   );
@@ -56,7 +78,7 @@ export async function runApifyActor(
     if (Date.now() - startTime > timeoutMs) throw new Error(`Actor ${actorId} timed out`);
     await new Promise((r) => setTimeout(r, POLL_INTERVAL));
     const statusRes = await axios.get(
-      `https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`,
+      `https://api.apify.com/v2/actor-runs/${runId}?token=${token}`,
       { timeout: 15_000 }
     );
     status = statusRes.data?.data?.status ?? 'UNKNOWN';
@@ -68,7 +90,7 @@ export async function runApifyActor(
   // 3. Fetch dataset items
   const datasetId: string = runRes.data?.data?.defaultDatasetId;
   const itemsRes = await axios.get(
-    `https://api.apify.com/v2/datasets/${datasetId}/items?token=${APIFY_TOKEN}&format=json&limit=200`,
+    `https://api.apify.com/v2/datasets/${datasetId}/items?token=${token}&format=json&limit=200`,
     { timeout: 30_000 }
   );
 

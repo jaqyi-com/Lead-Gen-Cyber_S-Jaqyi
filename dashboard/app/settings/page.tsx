@@ -7,6 +7,7 @@ interface Config {
   categories: Record<string, string[]>;
   schedule: { enabled: boolean; cron: string; label: string };
   sources?: Record<string, boolean>;
+  apifyToken?: string;
   lastRun: string | null;
   lastRunStatus: string | null;
 }
@@ -47,6 +48,14 @@ export default function SettingsPage() {
   const [savedMsg, setSavedMsg] = useState('');
   const [runMsg, setRunMsg] = useState('');
 
+  // Apify Token state
+  const [apifyTokenInput, setApifyTokenInput] = useState('');
+  const [showToken, setShowToken] = useState(false);
+  const [testingToken, setTestingToken] = useState(false);
+  const [tokenTestMsg, setTokenTestMsg] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [savingToken, setSavingToken] = useState(false);
+  const [tokenSavedMsg, setTokenSavedMsg] = useState('');
+
   // Keyword editor state
   const [newKeyword, setNewKeyword] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
@@ -60,6 +69,7 @@ export default function SettingsPage() {
       if (res.ok) {
         const data = await res.json() as Config;
         setConfig(data);
+        if (data.apifyToken) setApifyTokenInput(data.apifyToken);
         setSelectedCronPreset(data.schedule?.cron ?? '0 6 * * *');
       }
     } catch { /* */ }
@@ -102,12 +112,59 @@ export default function SettingsPage() {
       const res = await fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keywords: config.keywords, categories: config.categories, schedule: config.schedule }),
+        body: JSON.stringify({
+          keywords: config.keywords,
+          categories: config.categories,
+          schedule: config.schedule,
+          apifyToken: apifyTokenInput.trim(),
+        }),
       });
       if (res.ok) { setSavedMsg('✅ Saved!'); setTimeout(() => setSavedMsg(''), 3000); }
       else setSavedMsg('❌ Save failed');
     } catch { setSavedMsg('❌ Error saving'); }
     setSaving(false);
+  }
+
+  async function handleTestApifyToken() {
+    if (!apifyTokenInput.trim()) {
+      setTokenTestMsg({ ok: false, msg: 'Please enter a token first' });
+      return;
+    }
+    setTestingToken(true);
+    setTokenTestMsg(null);
+    try {
+      const res = await fetch(`/api/test/apify?token=${encodeURIComponent(apifyTokenInput.trim())}`);
+      const data = await res.json() as { ok: boolean; message: string; detail?: string };
+      setTokenTestMsg({
+        ok: data.ok,
+        msg: data.message + (data.detail ? ` (${data.detail})` : '')
+      });
+    } catch {
+      setTokenTestMsg({ ok: false, msg: 'Network error testing Apify token' });
+    }
+    setTestingToken(false);
+  }
+
+  async function handleSaveApifyToken() {
+    setSavingToken(true);
+    setTokenSavedMsg('');
+    try {
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apifyToken: apifyTokenInput.trim() }),
+      });
+      if (res.ok) {
+        if (config) setConfig({ ...config, apifyToken: apifyTokenInput.trim() });
+        setTokenSavedMsg('✅ Apify Token updated and saved!');
+        setTimeout(() => setTokenSavedMsg(''), 4000);
+      } else {
+        setTokenSavedMsg('❌ Failed to save token');
+      }
+    } catch {
+      setTokenSavedMsg('❌ Error saving token');
+    }
+    setSavingToken(false);
   }
 
   async function triggerRun() {
@@ -309,6 +366,111 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {/* ── Apify Actor Token ───────────────────────────────────── */}
+      <div className="card fade-up-1" style={{ padding: '24px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>🕷️</span> Apify Actor API Token
+          </h2>
+          <a
+            href="https://console.apify.com/account/integrations"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 12, color: '#a78bfa', textDecoration: 'none' }}
+          >
+            Get Token from Apify Console ↗
+          </a>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
+          The API token used by all 24 lead scrapers to run Google Search & platform actors. You can update and test it anytime from this dashboard.
+        </p>
+
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 260 }}>
+            <input
+              type={showToken ? 'text' : 'password'}
+              className="input-field"
+              value={apifyTokenInput}
+              onChange={(e) => {
+                setApifyTokenInput(e.target.value);
+                setTokenTestMsg(null);
+              }}
+              placeholder="apify_api_..."
+              style={{
+                width: '100%',
+                paddingRight: 40,
+                fontFamily: 'monospace',
+                fontSize: 13,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowToken(!showToken)}
+              style={{
+                position: 'absolute',
+                right: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 14,
+                opacity: 0.65,
+              }}
+              title={showToken ? 'Hide Token' : 'Show Token'}
+            >
+              {showToken ? '🙈' : '👁️'}
+            </button>
+          </div>
+
+          <button
+            className="btn-ghost"
+            onClick={handleTestApifyToken}
+            disabled={testingToken || !apifyTokenInput.trim()}
+            style={{ padding: '10px 16px', fontSize: 13 }}
+          >
+            {testingToken ? 'Testing…' : '⚡ Test Token'}
+          </button>
+
+          <button
+            className="btn-primary"
+            onClick={handleSaveApifyToken}
+            disabled={savingToken || !apifyTokenInput.trim()}
+            style={{ padding: '10px 20px', fontSize: 13, fontWeight: 600 }}
+          >
+            {savingToken ? 'Saving…' : '💾 Save Token'}
+          </button>
+        </div>
+
+        {tokenTestMsg && (
+          <div style={{
+            marginTop: 12,
+            padding: '10px 14px',
+            borderRadius: 8,
+            fontSize: 12,
+            background: tokenTestMsg.ok ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+            border: `1px solid ${tokenTestMsg.ok ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+            color: tokenTestMsg.ok ? '#34d399' : '#f87171',
+          }}>
+            {tokenTestMsg.msg}
+          </div>
+        )}
+
+        {tokenSavedMsg && (
+          <div style={{
+            marginTop: 12,
+            padding: '10px 14px',
+            borderRadius: 8,
+            fontSize: 12,
+            background: tokenSavedMsg.startsWith('✅') ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+            border: `1px solid ${tokenSavedMsg.startsWith('✅') ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+            color: tokenSavedMsg.startsWith('✅') ? '#34d399' : '#f87171',
+          }}>
+            {tokenSavedMsg}
+          </div>
+        )}
+      </div>
+
       {/* ── Lead Sources ────────────────────────────────────────── */}
       <div className="card fade-up-1" style={{ padding: '24px', marginBottom: 20 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -320,11 +482,30 @@ export default function SettingsPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {[
-            { key: 'freelancer', name: 'Freelancer', icon: '💼', color: '#6366f1' },
-            { key: 'upwork', name: 'Upwork', icon: '🟢', color: '#10b981' },
+            { key: 'linkedin-public', name: 'LinkedIn Public', icon: '🔗', color: '#0284c7' },
+            { key: 'twitter', name: 'Twitter / X', icon: '𝕏', color: '#38bdf8' },
             { key: 'reddit', name: 'Reddit', icon: '🤖', color: '#f97316' },
-            { key: 'twitter', name: 'Twitter / X', icon: '🐦', color: '#38bdf8' },
-            { key: 'linkedin-public', name: 'LinkedIn Public', icon: '💼', color: '#0284c7' },
+            { key: 'facebook', name: 'Facebook', icon: '📘', color: '#3b82f6' },
+            { key: 'threads', name: 'Meta Threads', icon: '🧵', color: '#ec4899' },
+            { key: 'bluesky', name: 'Bluesky', icon: '🦋', color: '#0284c7' },
+            { key: 'mastodon', name: 'Mastodon', icon: '🐘', color: '#6366f1' },
+            { key: 'youtube', name: 'YouTube', icon: '▶️', color: '#dc2626' },
+            { key: 'telegram', name: 'Telegram', icon: '✈️', color: '#0ea5e9' },
+            { key: 'indiehackers', name: 'Indie Hackers', icon: '🚀', color: '#059669' },
+            { key: 'producthunt', name: 'Product Hunt', icon: '🐱', color: '#f97316' },
+            { key: 'hackernews', name: 'Hacker News', icon: '🟧', color: '#ea580c' },
+            { key: 'github', name: 'GitHub', icon: '🐙', color: '#8b5cf6' },
+            { key: 'quora', name: 'Quora', icon: '❓', color: '#ef4444' },
+            { key: 'devto', name: 'Dev.to', icon: '👩‍💻', color: '#14b8a6' },
+            { key: 'upwork', name: 'Upwork', icon: '🟢', color: '#10b981' },
+            { key: 'freelancer', name: 'Freelancer', icon: '💼', color: '#6366f1' },
+            { key: 'fiverr', name: 'Fiverr', icon: '❇️', color: '#10b981' },
+            { key: 'contra', name: 'Contra', icon: '⚡', color: '#eab308' },
+            { key: 'wellfound', name: 'Wellfound', icon: '✌️', color: '#d97706' },
+            { key: 'guru', name: 'Guru', icon: '🧘', color: '#9333ea' },
+            { key: 'peopleperhour', name: 'PeoplePerHour', icon: '⏱️', color: '#f59e0b' },
+            { key: 'clutch', name: 'Clutch RFPs', icon: '🏷️', color: '#f43f5e' },
+            { key: 'craigslist', name: 'Craigslist Gigs', icon: '📋', color: '#84cc16' },
           ].map((src) => {
             const isEnabled = config?.sources?.[src.key] !== false;
 
